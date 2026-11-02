@@ -11,9 +11,10 @@ This document is the navigation page for the HR Solutions Lab project collection
 - **Portfolio role:** Flagship product demonstrating the intersection of HR domain knowledge, regulatory research, user experience and digital product development.
 
 ### Smart Onboarding
+- **Live demo:** https://hr-solutions-lab.vercel.app/
 - **Project folder:** https://github.com/barbarajuhasz27-eng/hr-solutions-lab/tree/main/smart-onboarding
 - **Domain:** Employee experience, onboarding process design and HR reporting
-- **Status:** Feature-complete prototype, prepared for release. Runs locally on synthetic data; no user testing conducted.
+- **Status:** Live demo available. Feature-complete prototype running on synthetic data; no user testing conducted.
 - **Implemented:** Employee Portal and Demo Mode; Learning Center; feedback, check-ins, scheduling and action plans; rule-based readiness, dependencies and process insights; Experience & Process Intelligence reporting with KPI definitions and a five-employee minimum for experience ratings.
 - **Technology:** Next.js, React, TypeScript, Tailwind CSS; Vitest and Testing Library (332 tests).
 - **Not included:** authentication, backend, integrations (HRIS, LMS, calendar) and real employee data. The role switch is a simulated preview.
