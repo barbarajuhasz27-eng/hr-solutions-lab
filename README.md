@@ -41,6 +41,7 @@ An independent digital product connecting individual life and career goals with 
 **Status:** In development.
 
 ### 02 · [Smart Onboarding](./smart-onboarding/)
+**Live demo:** https://hr-solutions-lab.vercel.app/
 **Employee Experience & HR Process Intelligence, from Offer Acceptance to Day 90**
 
 A working web prototype that connects an Employee Portal with an HR workspace on the same onboarding case:
@@ -52,7 +53,7 @@ A working web prototype that connects an Employee Portal with an HR workspace on
 
 Built with Next.js, React and TypeScript, with 332 automated tests. It runs locally in the browser on synthetic data, without sign-in or backend, and is not a production HRIS or LMS.
 
-**Status:** Feature-complete prototype, prepared for release. No user testing has been conducted; reported figures are calculated from synthetic data and are illustrative only.
+**Status:** Live demo available. Feature-complete portfolio prototype; no user testing has been conducted, and reported figures are calculated from synthetic data and are illustrative only.
 
 ### 03 · HR Operations Hub
 **Employee Requests & Workflow Automation**
