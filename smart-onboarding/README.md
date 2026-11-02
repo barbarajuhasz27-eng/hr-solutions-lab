@@ -1,6 +1,8 @@
 # Smart Onboarding
 ### Employee Experience & HR Process Intelligence
 
+**Live demo:** https://hr-solutions-lab.vercel.app/
+
 **Employee Experience · HR Process Design · Cross-functional Workflow Design**
 
 Smart Onboarding is an independent HR process design and digital product development project. It is a working web prototype that covers onboarding from offer acceptance to Day 90, built around one shared onboarding case with two sides:
