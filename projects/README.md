@@ -12,9 +12,13 @@ This document is the navigation page for the HR Solutions Lab project collection
 
 ### Smart Onboarding
 - **Project folder:** https://github.com/barbarajuhasz27-eng/hr-solutions-lab/tree/main/smart-onboarding
-- **Domain:** HR process design and onboarding coordination
-- **Status:** In development — product brief and MVP specification prepared; functional prototype not yet implemented.
-- **Portfolio role:** Demonstrates process analysis, stakeholder coordination, product thinking and digital workflow design.
+- **Domain:** Employee experience, onboarding process design and HR reporting
+- **Status:** Feature-complete prototype, prepared for release. Runs locally on synthetic data; no user testing conducted.
+- **Implemented:** Employee Portal and Demo Mode; Learning Center; feedback, check-ins, scheduling and action plans; rule-based readiness, dependencies and process insights; Experience & Process Intelligence reporting with KPI definitions and a five-employee minimum for experience ratings.
+- **Technology:** Next.js, React, TypeScript, Tailwind CSS; Vitest and Testing Library (332 tests).
+- **Not included:** authentication, backend, integrations (HRIS, LMS, calendar) and real employee data. The role switch is a simulated preview.
+- **Portfolio role:** Demonstrates process analysis, stakeholder coordination, privacy-aware product design, transparent KPI definitions and end-to-end prototype development.
+- **Documentation:** [README](../smart-onboarding/README.md) · [Product brief](../smart-onboarding/docs/PRODUCT_BRIEF.md) · [Methodology](../smart-onboarding/docs/METHODOLOGY.md)
 
 ## Planned projects
 

@@ -41,11 +41,18 @@ An independent digital product connecting individual life and career goals with 
 **Status:** In development.
 
 ### 02 · [Smart Onboarding](./smart-onboarding/)
-**From Offer Acceptance to First 90 Days**
+**Employee Experience & HR Process Intelligence, from Offer Acceptance to Day 90**
 
-A digital onboarding workflow concept for coordinating HR, IT, hiring managers and other stakeholders.
+A working web prototype that connects an Employee Portal with an HR workspace on the same onboarding case:
 
-**Status:** In development — MVP specification prepared; functional prototype not yet implemented.
+- **Employee Portal:** personal journey, weekly steps, contacts and schedule.
+- **Learning Center:** short illustrative modules with quizzes, assigned by checkpoint and role (not certified compliance training).
+- **Feedback & check-ins:** Day 7/30/60/90 pulse surveys, employee-controlled sharing of discussion topics, check-in scheduling with fictional slots, and action plans with follow-up.
+- **HR process intelligence:** rule-based readiness (no weighted scores), cross-team dependencies and blockers, and reporting where every KPI has a written definition. Experience ratings are shown only for groups of at least five distinct employees, and raw comments never appear in reporting.
+
+Built with Next.js, React and TypeScript, with 332 automated tests. It runs locally in the browser on synthetic data, without sign-in or backend, and is not a production HRIS or LMS.
+
+**Status:** Feature-complete prototype, prepared for release. No user testing has been conducted; reported figures are calculated from synthetic data and are illustrative only.
 
 ### 03 · HR Operations Hub
 **Employee Requests & Workflow Automation**
@@ -81,7 +88,7 @@ The objective is not technology for its own sake, but practical solutions ground
 
 ## Project Documentation
 
-Each developed project will include a clear explanation of the problem, intended users, requirements, solution design, personal contribution, implementation, testing, limitations and next steps.
+Each developed project includes a clear explanation of the problem, intended users, requirements, solution design, personal contribution, implementation, testing, limitations and next steps. Smart Onboarding is documented in its [README](./smart-onboarding/README.md), [product brief](./smart-onboarding/docs/PRODUCT_BRIEF.md) and [methodology](./smart-onboarding/docs/METHODOLOGY.md).
 
 ## Disclaimer
 

@@ -1,5 +1,7 @@
 # Smart Onboarding — MVP Build Specification
 
+> **Version note.** This is the original MVP specification (v1, task tracking). It has been extended into an Onboarding Readiness & Process Intelligence prototype (v2). In v2, the single default checklist in section 3 is replaced by adaptive workflow modules with mandatory/optional tasks and dependencies, and the data model in section 4 gains `mandatory`, `dependsOn`, `blockedCount`, `blockedReason` and a case-level `workflow` context. See [METHODOLOGY.md](./METHODOLOGY.md) for the current rules and the [product brief](./PRODUCT_BRIEF.md) for the current positioning. The rest of this document is kept as the historical v1 specification.
+
 ## 1. Product experience
 
 Build a polished, responsive HR operations dashboard for a fictional mid-sized company. The application is an English-language demo for HR / People Operations coordinators.
