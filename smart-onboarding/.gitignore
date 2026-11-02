@@ -1,0 +1,28 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# Test coverage and TypeScript build info
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Environment files (none are needed; never commit secrets)
+.env*
+
+# Logs
+*.log
+npm-debug.log*
+
+# Deployment and local tool folders
+.vercel/
+.claude/
+
+# OS and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
