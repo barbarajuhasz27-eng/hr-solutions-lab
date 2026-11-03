@@ -14,7 +14,7 @@ The prototype runs locally in the browser on a fictional company and synthetic d
 
 ## Status
 
-**Feature-complete prototype, prepared for release.** The original Readiness & Process Intelligence MVP and all four Employee Experience phases are implemented:
+**Live demo available.** The feature-complete portfolio prototype is deployed at [hr-solutions-lab.vercel.app](https://hr-solutions-lab.vercel.app/). The original Readiness & Process Intelligence MVP and all four Employee Experience phases are implemented:
 
 1. Employee Portal and Demo Mode
 2. Learning Center
@@ -22,6 +22,12 @@ The prototype runs locally in the browser on a fictional company and synthetic d
 4. Experience & Process Intelligence reporting
 
 Typecheck, lint, 332 automated tests and the production build pass. No user testing has been conducted, and no business outcome is claimed. Screenshots have not been captured yet (see [Screenshots](#screenshots)).
+
+## Source code and reuse
+
+This repository is public for portfolio review and demonstration. **No open-source licence is granted.** Copyright © 2026 Barbara Juhasz. The source code and original project documentation remain subject to applicable copyright law.
+
+GitHub's platform terms permit users to view and fork public repositories. This notice does not override those platform terms. No broader permission to reuse, modify, redistribute or commercially exploit the project is granted by this repository. For other uses, request permission from the author.
 
 ## The problem
 
