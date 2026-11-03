@@ -1,7 +1,7 @@
 # Smart Onboarding
 ### Employee Experience & HR Process Intelligence
 
-**Live demo:** https://smart-onboarding.vercel.app/
+**Live demo:** https://smart-onboarding-barbara-ed0f.vercel.app/
 
 **Employee Experience · HR Process Design · Cross-functional Workflow Design**
 
@@ -14,7 +14,7 @@ The prototype runs locally in the browser on a fictional company and synthetic d
 
 ## Status
 
-**Live demo available.** The feature-complete portfolio prototype is deployed at [hr-solutions-lab.vercel.app](https://smart-onboarding.vercel.app/). The original Readiness & Process Intelligence MVP and all four Employee Experience phases are implemented:
+**Live demo available.** The feature-complete portfolio prototype is deployed at [hr-solutions-lab.vercel.app](https://smart-onboarding-barbara-ed0f.vercel.app/). The original Readiness & Process Intelligence MVP and all four Employee Experience phases are implemented:
 
 1. Employee Portal and Demo Mode
 2. Learning Center
