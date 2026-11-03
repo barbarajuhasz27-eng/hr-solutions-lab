@@ -1,7 +1,7 @@
 # HR Operations Hub
 ### HR Operations Readiness & Playbooks
 
-**Project status:** In development · first functional slice committed; local validation pending  
+**Project status:** In development · first functional slice committed; GitHub Actions validation pending  
 **Target user:** HR Generalists and lean HR teams  
 **Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab
