@@ -1,0 +1,47 @@
+name: HR Operations Hub checks
+
+on:
+  push:
+    paths:
+      - "hr-operations-hub/**"
+      - ".github/workflows/hr-operations-hub.yml"
+  pull_request:
+    paths:
+      - "hr-operations-hub/**"
+      - ".github/workflows/hr-operations-hub.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Test, typecheck, lint and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: hr-operations-hub
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: hr-operations-hub/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run domain tests
+        run: npm test
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Production build
+        run: npm run build
