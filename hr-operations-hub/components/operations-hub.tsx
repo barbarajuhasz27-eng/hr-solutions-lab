@@ -181,14 +181,14 @@ export function OperationsHub() {
   const [hydrated, setHydrated] = useState(false);
   const [notice, setNotice] = useState("");
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const loaded = loadActivities(new Date());
     setActivities(loaded);
-    if (loaded.length > 0 && !loaded.some((activity) => activity.id === activeId)) {
-      setActiveId(loaded[0].id);
-    }
+    if (loaded.length > 0) setActiveId(loaded[0].id);
     setHydrated(true);
   }, []);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(new Date()), 30_000);
@@ -260,7 +260,7 @@ export function OperationsHub() {
   function createFromPlaybook(playbookId: string) {
     const playbook = getPlaybook(playbookId);
     if (!playbook || playbook.actions.length === 0) return;
-    const startsAt = new Date(Date.now() + 7 * 24 * 60 * 60_000);
+    const startsAt = new Date(Date.now() + 14 * 24 * 60 * 60_000);
     const created = createActivity(
       playbookId,
       playbook.title,
@@ -271,7 +271,7 @@ export function OperationsHub() {
     setActivities((current) => [created, ...current]);
     setActiveId(created.id);
     setView("activity");
-    setNotice("New activity created from the playbook, scheduled seven days from now.");
+    setNotice("New activity created from the playbook, scheduled two weeks from now.");
   }
 
   if (!hydrated) {
