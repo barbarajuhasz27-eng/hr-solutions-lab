@@ -53,6 +53,27 @@ describe("HR Operations readiness engine", () => {
     expect(mustDoIds).toContain("it-setup");
   });
 
+  it("keeps an activity in preparation when its next essential action is several days away", () => {
+    const upcoming = activities.find((activity) => activity.id === "activity-training-upcoming");
+    expect(upcoming).toBeDefined();
+    expect(getReadiness(upcoming!, now).status).toBe("preparing");
+  });
+
+  it("moves dependent steps into Can simplify when their prerequisites are complete", () => {
+    const modified = {
+      ...training,
+      actions: training.actions.map((action) =>
+        ["trainer-confirmed", "participants-confirmed"].includes(action.id)
+          ? { ...action, status: "done" as const }
+          : action,
+      ),
+    };
+    const plan = getRecoveryPlan(modified, now);
+    const simplifyIds = plan.find((group) => group.id === "can-simplify")?.actions.map((action) => action.id);
+    expect(simplifyIds).toContain("participant-reminder");
+    expect(simplifyIds).toContain("materials-ready");
+  });
+
   it("treats a completed activity as complete", () => {
     const completed = activities.find((activity) => activity.id === "activity-training-complete");
     expect(completed).toBeDefined();
