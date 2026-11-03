@@ -41,7 +41,7 @@ An independent digital product connecting individual life and career goals with 
 **Status:** In development.
 
 ### 02 · [Smart Onboarding](./smart-onboarding/)
-**Live demo:** https://smart-onboarding.vercel.app/
+**Live demo:** https://smart-onboarding-barbara-ed0f.vercel.app/
 **Employee Experience & HR Process Intelligence, from Offer Acceptance to Day 90**
 
 A working web prototype that connects an Employee Portal with an HR workspace on the same onboarding case:
