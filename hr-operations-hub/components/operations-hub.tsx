@@ -389,7 +389,7 @@ export function OperationsHub() {
 
         {view === "radar" && (
           <>
-            {rescueActivity && rescueReadiness && rescueReadiness.status !== "completed" && (
+            {rescueActivity && rescueReadiness && rescueReadiness.unresolvedEssential.length > 0 && (
               <section className="hero-panel">
                 <div>
                   <div className="hero-kicker">Priority activity · Needs attention now</div>
