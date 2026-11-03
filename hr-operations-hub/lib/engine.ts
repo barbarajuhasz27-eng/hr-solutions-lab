@@ -32,15 +32,22 @@ export function getReadiness(activity: Activity, now: Date): Readiness {
     const hasBlocker = unresolvedEssential.some(
       (action) => action.status === "blocked" || action.status === "waiting",
     );
+    const unresolvedDueDates = unresolvedEssential.map((action) =>
+      getActionDueAt(activity.startsAt, action.dueOffsetMinutes).getTime(),
+    );
+    const hasOverdueEssential = unresolvedDueDates.some((dueAt) => dueAt < now.getTime());
+    const hasEssentialDueSoon = unresolvedDueDates.some(
+      (dueAt) => dueAt <= now.getTime() + 24 * 60 * 60_000,
+    );
+
     if (remainingMinutes <= RECOVERY_WINDOW_MINUTES) {
       status = "recovery";
-    } else if (
-      hasBlocker ||
-      unresolvedEssential.some((action) => getActionDueAt(activity.startsAt, action.dueOffsetMinutes) < now)
-    ) {
+    } else if (hasBlocker || hasOverdueEssential) {
       status = "at-risk";
-    } else {
+    } else if (hasEssentialDueSoon) {
       status = "needs-attention";
+    } else {
+      status = "preparing";
     }
   } else {
     const otherOpen = activity.actions.some(
