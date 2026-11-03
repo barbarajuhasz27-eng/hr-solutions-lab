@@ -1,7 +1,7 @@
 # HR Operations Hub
 ### HR Operations Readiness & Playbooks
 
-**Project status:** In development · product direction defined  
+**Project status:** In development · first functional slice committed; local validation pending  
 **Target user:** HR Generalists and lean HR teams  
 **Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab
@@ -58,9 +58,21 @@ The prototype does not book rooms, send real messages or configure IT. It helps 
 
 The intended prototype stack is Next.js, React, TypeScript and Tailwind CSS, consistent with the other HR Solutions Lab web projects. The initial experience should run on local synthetic data, with no backend or third-party data transfer.
 
+## Run locally
+
+From the repository root:
+
+```powershell
+cd hr-operations-hub
+npm.cmd install
+npm.cmd run dev
+```
+
+Then open `http://localhost:3000`. Run `npm.cmd test`, `npm.cmd run typecheck`, `npm.cmd run lint` and `npm.cmd run build` before treating this slice as validated.
+
 ## Status discipline
 
-The product direction and MVP requirements are documented. **Implementation has not started.** The USP is a product hypothesis, not a validated market claim. Only functionality that is implemented and tested will be described as implemented.
+The first functional slice is committed: the Operations Radar, training playbook, activity workspace and 45-minute Rapid Recovery flow. **It has not yet been run locally or independently validated in this development environment.** Other playbooks remain in design. The USP is a product hypothesis, not a validated market claim. Only functionality that is implemented and tested will be described as tested.
 
 ---
 **HR Solutions Lab · People · Process · Technology**
