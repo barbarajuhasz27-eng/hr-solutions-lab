@@ -33,12 +33,12 @@ AI-assisted development tools are part of the development workflow, alongside in
 
 ## Selected Projects
 
-### 01 · [EU Mobility Navigator](https://github.com/barbarajuhasz27-eng/eu-mobility-navigator)
+### 01 · [EU Mobility Navigator](./case-studies/eu-mobility-navigator.md)
 **International Mobility & Employment Pathways**
 
 An independent digital product connecting individual life and career goals with European destinations and potential employment and mobility pathways.
 
-**Status:** In development.
+**Status:** Private prototype; public case study only. Not publicly deployed. The source repository remains private.
 
 ### 02 · [Smart Onboarding](./smart-onboarding/)
 **Live demo:** https://smart-onboarding-barbara-ed0f.vercel.app/
