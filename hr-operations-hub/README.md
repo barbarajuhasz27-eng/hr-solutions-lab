@@ -1,7 +1,7 @@
 # HR Operations Hub
 ### HR Operations Readiness & Playbooks
 
-**Project status:** In development · first functional slice implemented; GitHub Actions checks pass (13 tests, typecheck, lint and production build)  
+**Project status:** In development · first functional slice plus readiness improvements implemented; local checks pass (51 tests, typecheck, lint and production build)  
 **Target user:** HR Generalists and lean HR teams  
 **Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab
@@ -72,7 +72,17 @@ Then open `http://localhost:3000`. Run `npm.cmd test`, `npm.cmd run typecheck`, 
 
 ## Status discipline
 
-The first functional slice is committed: the Operations Radar, training playbook, activity workspace and 45-minute Rapid Recovery flow. **It has not yet been run locally or independently validated in this development environment.** Other playbooks remain in design. The USP is a product hypothesis, not a validated market claim. Only functionality that is implemented and tested will be described as tested.
+The first functional slice is committed: the Operations Radar, training playbook, activity workspace and 45-minute Rapid Recovery flow.
+
+The readiness slice adds:
+
+- **Time-aware readiness.** An open prerequisite alone no longer makes an activity *At risk*. Risk comes from a blocked essential step, a missed deadline, a "waiting on" hold within 24 hours of its deadline, remaining work (including prerequisites) that no longer fits before a deadline or the start, or a prerequisite that is itself at risk. Each status comes with a written explanation.
+- **Waiting / blocked holds.** These have a person or team and a short note, and they feed the "Blocked / needs someone else" group in Rapid Recovery.
+- **Dependency notes** in the Activity Workspace ("Needs first", "Unlocks").
+- **A Radar banner** that always shows the most urgent upcoming activity and its own countdown.
+- **Stale-demo handling** for returning visitors. Untouched demos start fresh. Demos with your own changes are kept, and their timeline is moved forward by the time you were away.
+
+Automated tests, typecheck, lint and production build pass locally. **The new UI has not yet been reviewed visually in a browser.** Other playbooks remain in design. The USP is a product hypothesis, not a validated market claim. Only functionality that is implemented and tested will be described as tested.
 
 ---
 **HR Solutions Lab · People · Process · Technology**
