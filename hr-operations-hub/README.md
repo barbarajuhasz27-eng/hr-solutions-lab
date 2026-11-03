@@ -1,27 +1,51 @@
 # HR Operations Hub
-### Employee Services & HR Case Management
+### HR Operations Readiness & Playbooks
 
-**Project status:** In development · product definition  
-**Domain:** HR Operations · Employee Services · Workflow Management  
+**Project status:** In development · product direction defined  
+**Target user:** HR Generalists and lean HR teams  
+**Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab
 
-HR Operations Hub is a concept for a structured HR service-delivery workspace. It connects an employee-facing request portal with an HR Operations case queue, so requests have a clear category, owner, service target, status and communication history.
+HR Operations Hub is a focused workspace that helps HR Generalists keep important recurring and one-off operational activities from slipping through the cracks.
 
-The project focuses on the operational work that happens **after an employee has joined**. It complements Smart Onboarding rather than duplicating its first-90-days journey.
+Instead of another employee ticket queue, the Hub starts with an **HR activity or event** — for example a training session, an employee information event, a performance-cycle launch or a recurring HR deadline. A reusable playbook turns that activity into a timed sequence of actions, owners, dependencies and readiness checks.
 
-## Product principle
+> Keep HR operations from slipping through the cracks.
 
-> Every HR request should have a clear owner, a visible next step and a traceable outcome.
+## The product hypothesis / USP
 
-## Current scope
+**Time-aware HR playbooks with a rapid-recovery mode.**
 
-The first MVP is planned around three connected surfaces:
+The prototype explores two connected capabilities:
 
-1. **Employee Portal** — submit a structured HR request, view its status and read employee-visible updates.
-2. **HR Service Desk** — review the queue, triage requests, assign an owner, manage the workflow and send updates.
-3. **Operations Insights** — understand request volumes, backlog, overdue cases and resolution patterns using explicitly defined metrics.
+1. **Prepare:** create an HR activity from a reusable playbook, set its date and owners, and generate the actions that need to happen before it starts.
+2. **Recover:** when the activity is at risk or already running late, show the remaining critical actions in priority order, the dependencies and practical fallback options.
 
-The workflow uses synthetic cases and illustrative service targets. It is a portfolio prototype, not a production HR case-management system.
+The central question is not “How many tasks are complete?” but:
+
+**“What must still happen for this HR activity to run successfully — and what should I do first?”**
+
+## MVP surfaces
+
+1. **Operations Radar** — a calendar and overview of upcoming, at-risk and overdue HR activities.
+2. **Playbook Library** — reusable HR-specific checklists with lead times, dependencies, owners and criticality.
+3. **Activity Workspace** — the operational view for one event or process instance, including readiness and assigned actions.
+4. **Rapid Recovery** — a time-aware view for late starts, such as the 45-minute training scenario.
+
+## Lead use case: the 45-minute training rescue
+
+A training session is due to start in 45 minutes. The HR Generalist opens the activity and sees the remaining essentials: confirm the trainer, notify participants, secure a room, check IT / presentation equipment and prepare materials. Actions are grouped by urgency and dependency. If a normal preparation step can no longer be completed, the playbook shows a practical fallback rather than merely marking it overdue.
+
+The prototype does not book rooms, send real messages or configure IT. It helps the HR Generalist understand and coordinate what needs to happen.
+
+## What this is not
+
+- Not Jira, ServiceNow or a generic ticket-management clone.
+- Not an employee request portal or HR case-management queue.
+- Not a full project-management application.
+- Not an HRIS, LMS, calendar or email replacement.
+- Not an AI assistant that independently decides priorities or contacts employees.
+- Not a production system for real employee data.
 
 ## Project documentation
 
@@ -30,23 +54,13 @@ The workflow uses synthetic cases and illustrative service targets. It is a port
 - [Data model and privacy boundaries](./docs/DATA_AND_PRIVACY.md)
 - [Build brief for Claude / Cursor](./CLAUDE_BUILD_PROMPT.md)
 
-## What is not included in the MVP
-
-- Real employee data or confidential HR case records
-- Authentication, SSO or production role-based access control
-- Email, Teams, calendar, HRIS or payroll integrations
-- File uploads or document storage
-- Automated legal, payroll or policy decisions
-- AI classification or AI-generated responses
-- Production SLA commitments or claims of measured efficiency gains
-
 ## Technology direction
 
 The intended prototype stack is Next.js, React, TypeScript and Tailwind CSS, consistent with the other HR Solutions Lab web projects. The initial experience should run on local synthetic data, with no backend or third-party data transfer.
 
 ## Status discipline
 
-Only functionality that is implemented and tested will be described as implemented. The MVP scope, service targets, data and performance indicators are illustrative until validated.
+The product direction and MVP requirements are documented. **Implementation has not started.** The USP is a product hypothesis, not a validated market claim. Only functionality that is implemented and tested will be described as implemented.
 
 ---
 **HR Solutions Lab · People · Process · Technology**
