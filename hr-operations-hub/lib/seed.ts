@@ -7,7 +7,7 @@ function instantiateActions(playbookId: string): ActionInstance[] {
 
   return playbook.actions.map((action) => ({
     ...action,
-    status: "not-started",
+    status: "not-started" as const,
     ownerName:
       action.ownerRole === "Facilities"
         ? "Mara Klein"
@@ -44,7 +44,7 @@ export function createActivity(
   if (options?.complete) {
     activity.actions = activity.actions.map((action) => ({
       ...action,
-      status: "done",
+      status: "done" as const,
     }));
   }
 
@@ -71,7 +71,7 @@ export function createSeedActivities(now: Date): Activity[] {
   );
   planned.actions = planned.actions.map((action) =>
     ["trainer-confirmed", "participants-confirmed", "room-confirmed"].includes(action.id)
-      ? { ...action, status: "done", statusNote: "Confirmed in the demo workspace." }
+      ? { ...action, status: "done" as const, statusNote: "Confirmed in the demo workspace." }
       : action,
   );
 
