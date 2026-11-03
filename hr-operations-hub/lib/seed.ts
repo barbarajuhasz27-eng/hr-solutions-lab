@@ -1,7 +1,7 @@
 import type { Activity, ActionInstance } from "./model";
-import { getPlaybook, PLAYBOOKS } from "./playbooks";
+import { getPlaybook } from "./playbooks";
 
-function instantiateActions(playbookId: string, startsAt: Date): ActionInstance[] {
+function instantiateActions(playbookId: string): ActionInstance[] {
   const playbook = getPlaybook(playbookId);
   if (!playbook) return [];
 
@@ -15,9 +15,7 @@ function instantiateActions(playbookId: string, startsAt: Date): ActionInstance[
           ? "Jonas Weber"
           : action.ownerRole === "Trainer"
             ? "Alex Morgan"
-            : action.ownerRole.includes("Trainer")
-              ? "Alex Morgan"
-              : "Sophie Lang",
+            : "Sophie Lang",
   }));
 }
 
@@ -28,8 +26,10 @@ export function createActivity(
   id: string,
   options?: { location?: string; coordinator?: string; complete?: boolean },
 ): Activity {
-  const actions = instantiateActions(playbookId, startsAt);
-  const completedAt = options?.complete ? new Date(startsAt.getTime() + 90 * 60_000).toISOString() : undefined;
+  const actions = instantiateActions(playbookId);
+  const completedAt = options?.complete
+    ? new Date(startsAt.getTime() + 90 * 60_000).toISOString()
+    : undefined;
   const activity: Activity = {
     id,
     title,
@@ -52,7 +52,6 @@ export function createActivity(
 }
 
 export function createSeedActivities(now: Date): Activity[] {
-  const training = getPlaybook("training-session");
   const rescueStart = new Date(now.getTime() + 45 * 60_000);
   const rescue = createActivity(
     "training-session",
@@ -62,52 +61,32 @@ export function createSeedActivities(now: Date): Activity[] {
     { location: "Room 2.14 · HQ" },
   );
 
-  const performanceStart = new Date(now.getTime() + 6 * 24 * 60 * 60_000);
-  const performance = createActivity(
-    "performance-cycle",
-    "Performance review cycle launch",
-    performanceStart,
-    "activity-performance-cycle",
-    { location: "All departments · hybrid" },
+  const plannedStart = new Date(now.getTime() + 4 * 24 * 60 * 60_000);
+  const planned = createActivity(
+    "training-session",
+    "Excel essentials for managers",
+    plannedStart,
+    "activity-training-upcoming",
+    { location: "Training room · HQ" },
   );
-
-  const informationStart = new Date(now.getTime() + 3 * 24 * 60 * 60_000);
-  const info = createActivity(
-    "employee-info-session",
-    "New benefits information session",
-    informationStart,
-    "activity-benefits-session",
-    { location: "Virtual · Teams" },
-  );
-
-  const monthlyStart = new Date(now.getTime() + 2 * 24 * 60 * 60_000);
-  const monthly = createActivity(
-    "monthly-operations",
-    "Monthly HR data hand-off",
-    monthlyStart,
-    "activity-monthly-operations",
-    { location: "HR / Payroll" },
+  planned.actions = planned.actions.map((action) =>
+    ["trainer-confirmed", "participants-confirmed", "room-confirmed"].includes(action.id)
+      ? { ...action, status: "done", statusNote: "Confirmed in the demo workspace." }
+      : action,
   );
 
   const completedStart = new Date(now.getTime() - 5 * 24 * 60 * 60_000);
   const completed = createActivity(
     "training-session",
-    "Excel essentials for managers",
+    "HR systems refresher",
     completedStart,
     "activity-training-complete",
-    { location: "Training room · HQ", complete: true },
+    { location: "Virtual · Teams", complete: true },
   );
 
-  // Keep the unused variable explicit: the seeded training scenario is the only
-  // fully populated playbook in the first vertical slice.
-  void training;
-  return [rescue, monthly, info, performance, completed];
+  return [rescue, planned, completed];
 }
 
 export function resetActivities(now: Date): Activity[] {
   return createSeedActivities(now);
-}
-
-export function getPlayablePlaybooks() {
-  return PLAYBOOKS.filter((playbook) => playbook.actions.length > 0);
 }
