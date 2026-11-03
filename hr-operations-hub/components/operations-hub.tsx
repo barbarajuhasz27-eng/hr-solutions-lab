@@ -26,8 +26,6 @@ import { PLAYBOOKS, getPlaybook } from "@/lib/playbooks";
 import { createActivity, createSeedActivities, resetActivities } from "@/lib/seed";
 import { clearActivities, loadActivities, saveActivities } from "@/lib/storage";
 
-const STORAGE_KEY = "hr-operations-hub-demo-v1";
-
 function formatDate(date: Date, options: Intl.DateTimeFormatOptions = {}) {
   return new Intl.DateTimeFormat("en-GB", {
     day: "numeric",
