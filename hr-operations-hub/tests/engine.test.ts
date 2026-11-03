@@ -42,6 +42,18 @@ describe("HR Operations readiness engine", () => {
     expect(ids).toContain("attendance-followup");
   });
 
+  it("does not schedule more essential work than the remaining time allows", () => {
+    const shortWindow = {
+      ...training,
+      startsAt: new Date(now.getTime() + 15 * 60_000).toISOString(),
+    };
+    const plan = getRecoveryPlan(shortWindow, now);
+    const mustDo = plan.find((group) => group.id === "must-do-now")?.actions ?? [];
+    const simplify = plan.find((group) => group.id === "can-simplify")?.actions.map((action) => action.id);
+    expect(mustDo.reduce((total, action) => total + action.estimatedMinutes, 0)).toBeLessThanOrEqual(15);
+    expect(simplify).toContain("room-confirmed");
+  });
+
   it("offers a fallback for the blocked IT setup", () => {
     const itAction = training.actions.find((action) => action.id === "it-setup");
     expect(itAction?.fallback).toContain("laptop");
@@ -57,6 +69,18 @@ describe("HR Operations readiness engine", () => {
     const plan = getRecoveryPlan(modified, now);
     const mustDoIds = plan.find((group) => group.id === "must-do-now")?.actions.map((action) => action.id);
     expect(mustDoIds).toContain("it-setup");
+  });
+
+  it("marks an activity at risk when an essential prerequisite is still unresolved", () => {
+    const upcoming = activities.find((activity) => activity.id === "activity-training-upcoming");
+    expect(upcoming).toBeDefined();
+    const withOpenRoom = {
+      ...upcoming!,
+      actions: upcoming!.actions.map((action) =>
+        action.id === "room-confirmed" ? { ...action, status: "not-started" as const } : action,
+      ),
+    };
+    expect(getReadiness(withOpenRoom, now).status).toBe("at-risk");
   });
 
   it("keeps an activity in preparation when its next essential action is several days away", () => {
