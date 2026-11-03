@@ -36,6 +36,12 @@ describe("HR Operations readiness engine", () => {
     expect(ids).toContain("it-setup");
   });
 
+  it("keeps the optional attendance follow-up outside the pre-start critical path", () => {
+    const plan = getRecoveryPlan(training, now);
+    const ids = plan.find((group) => group.id === "follow-up")?.actions.map((action) => action.id);
+    expect(ids).toContain("attendance-followup");
+  });
+
   it("offers a fallback for the blocked IT setup", () => {
     const itAction = training.actions.find((action) => action.id === "it-setup");
     expect(itAction?.fallback).toContain("laptop");
