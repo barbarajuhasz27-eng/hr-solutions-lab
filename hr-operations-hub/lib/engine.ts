@@ -29,8 +29,17 @@ export function getReadiness(activity: Activity, now: Date): Readiness {
 
   let status: ActivityStatus = "ready";
   if (unresolvedEssential.length > 0) {
+    const byId = new Map<string, ActionInstance>(
+      activity.actions.map((action) => [action.id, action] as const),
+    );
     const hasBlocker = unresolvedEssential.some(
-      (action) => action.status === "blocked" || action.status === "waiting",
+      (action) =>
+        action.status === "blocked" ||
+        action.status === "waiting" ||
+        action.dependsOn.some((dependencyId) => {
+          const dependency = byId.get(dependencyId);
+          return dependency !== undefined && !isActionResolved(dependency);
+        }),
     );
     const unresolvedDueDates = unresolvedEssential.map((action) =>
       getActionDueAt(activity.startsAt, action.dueOffsetMinutes).getTime(),
@@ -86,12 +95,16 @@ export function getRecoveryPlan(activity: Activity, now: Date): RecoveryGroup[] 
   const canSimplify: ActionInstance[] = [];
   const followUp: ActionInstance[] = [];
   const blocked: ActionInstance[] = [];
+  let allocatedMinutes = 0;
 
-  for (const action of unresolved) {
-    const dependencies = action.dependsOn
-      .map((id) => byId.get(id))
-      .filter((dependency): dependency is ActionInstance => Boolean(dependency));
-    const waitingOnDependency = dependencies.some((dependency) => !isActionResolved(dependency));
+  const order = (a: ActionInstance, b: ActionInstance) =>
+    a.dueOffsetMinutes - b.dueOffsetMinutes || a.estimatedMinutes - b.estimatedMinutes;
+
+  for (const action of [...unresolved].sort(order)) {
+    const waitingOnDependency = action.dependsOn.some((id) => {
+      const dependency = byId.get(id);
+      return dependency !== undefined && !isActionResolved(dependency);
+    });
 
     if (waitingOnDependency || action.status === "blocked" || action.status === "waiting") {
       blocked.push(action);
@@ -99,8 +112,9 @@ export function getRecoveryPlan(activity: Activity, now: Date): RecoveryGroup[] 
     }
 
     if (action.criticality === "essential") {
-      if (action.estimatedMinutes <= remainingMinutes) {
+      if (allocatedMinutes + action.estimatedMinutes <= remainingMinutes) {
         mustDoNow.push(action);
+        allocatedMinutes += action.estimatedMinutes;
       } else if (action.fallback) {
         canSimplify.push(action);
       } else {
@@ -115,14 +129,6 @@ export function getRecoveryPlan(activity: Activity, now: Date): RecoveryGroup[] 
       followUp.push(action);
     }
   }
-
-  const order = (a: ActionInstance, b: ActionInstance) =>
-    a.dueOffsetMinutes - b.dueOffsetMinutes || a.estimatedMinutes - b.estimatedMinutes;
-
-  mustDoNow.sort(order);
-  canSimplify.sort(order);
-  followUp.sort(order);
-  blocked.sort(order);
 
   return [
     {
