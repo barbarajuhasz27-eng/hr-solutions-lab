@@ -5,10 +5,11 @@ This document is the navigation page for the HR Solutions Lab project collection
 ## Featured projects
 
 ### EU Mobility Navigator
-- **Repository:** https://github.com/barbarajuhasz27-eng/eu-mobility-navigator
+- **Case study:** [EU Mobility Navigator](../case-studies/eu-mobility-navigator.md)
 - **Domain:** International mobility and employment pathways
-- **Status:** In development
-- **Portfolio role:** Flagship product demonstrating the intersection of HR domain knowledge, regulatory research, user experience and digital product development.
+- **Status:** Private prototype; not publicly deployed. Public case study only; source repository remains private.
+- **Portfolio role:** Demonstrates life-first product framing, international mobility domain research, scope governance, user-journey design and evidence-aware digital product development.
+- **Current limitation:** All legal rules remain unverified; no external user testing has been conducted and there is no public demo URL.
 
 ### Smart Onboarding
 - **Live demo:** https://smart-onboarding-barbara-ed0f.vercel.app/
