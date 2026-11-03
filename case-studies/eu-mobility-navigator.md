@@ -57,7 +57,7 @@ Other important decisions include:
 - **Explicitly bounded rules.** Each assessment has a defined country, pathway and source scope. Unknown or unsupported conditions remain visible.
 - **Traceable evidence.** Legal rules, thresholds, sources, effective periods and review states are represented separately from editorial content and product hypotheses.
 - **No false certainty.** Missing information, a condition needing external verification and a condition outside the implemented model are different states.
-- **Privacy by default.** The prototype has no application backend, database, analytics or user accounts. Personal exploration and questionnaire state remain in browser session storage. A proposed invitation-only beta gate uses a separate, strictly necessary access cookie.
+- **Privacy by default.** The prototype has no application backend, database, analytics or user accounts. Personal exploration and questionnaire state remain in browser session storage. An implemented but not-yet-deployed invitation-only beta gate uses a separate, strictly necessary access cookie.
 
 The prototype is built with Next.js, React, TypeScript and Tailwind CSS. It uses a deterministic, source-backed rule engine for the limited assessment paths; it does not use generative AI to decide legal outcomes. AI-assisted development tools were used during implementation, alongside independent product decisions, requirements work, testing and documentation.
 
