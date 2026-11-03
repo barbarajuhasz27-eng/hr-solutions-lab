@@ -55,10 +55,12 @@ Built with Next.js, React and TypeScript, with 332 automated tests. It runs loca
 
 **Status:** Live demo available. Feature-complete portfolio prototype; no user testing has been conducted, and reported figures are calculated from synthetic data and are illustrative only.
 
-### 03 · HR Operations Hub
-**Employee Requests & Workflow Automation**
+### 03 · [HR Operations Hub](./hr-operations-hub/)
+**Employee Services & HR Case Management**
 
-**Status:** Planned.
+A concept for structured employee requests, HR triage, case ownership, employee communication and operational insights. It complements Smart Onboarding by focusing on ongoing HR services after the first 90 days.
+
+**Status:** In development — product brief and MVP scope defined. Implementation not started.
 
 ### 04 · Compensation Intelligence
 **Salary Structures & Benefits Analytics**
@@ -89,7 +91,7 @@ The objective is not technology for its own sake, but practical solutions ground
 
 ## Project Documentation
 
-Each developed project includes a clear explanation of the problem, intended users, requirements, solution design, personal contribution, implementation, testing, limitations and next steps. Smart Onboarding is documented in its [README](./smart-onboarding/README.md), [product brief](./smart-onboarding/docs/PRODUCT_BRIEF.md) and [methodology](./smart-onboarding/docs/METHODOLOGY.md).
+Each developed project includes a clear explanation of the problem, intended users, requirements, solution design, personal contribution, implementation, testing, limitations and next steps. Smart Onboarding is documented in its [README](./smart-onboarding/README.md), [product brief](./smart-onboarding/docs/PRODUCT_BRIEF.md) and [methodology](./smart-onboarding/docs/METHODOLOGY.md). HR Operations Hub is in product definition; see its [project brief](./hr-operations-hub/docs/PRODUCT_BRIEF.md), [process model](./hr-operations-hub/docs/PROCESS_MODEL.md) and [build prompt](./hr-operations-hub/CLAUDE_BUILD_PROMPT.md).
 
 ## Disclaimer
 
