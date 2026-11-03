@@ -619,7 +619,7 @@ export function OperationsHub() {
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
                       <button className="btn btn-outline btn-sm" type="button" onClick={() => updateAction(activeActivity.id, action.id, { status: "done", statusNote: "Completed in Rapid Recovery." })}>Mark done</button>
                       {action.fallback && (
-                        <button className="btn btn-dark btn-sm" type="button" onClick={() => useFallback(activeActivity, action)}>Use fallback</button>
+                        <button className="btn btn-dark btn-sm" type="button" onClick={() => applyFallback(activeActivity, action)}>Use fallback</button>
                       )}
                     </div>
                   </div>
