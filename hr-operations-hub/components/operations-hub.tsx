@@ -3,6 +3,7 @@
 import {
   ArrowLeft,
   ArrowRight,
+  Ban,
   CalendarDays,
   Check,
   CheckCircle2,
@@ -10,20 +11,41 @@ import {
   Clock3,
   ClipboardCheck,
   Flag,
+  Hourglass,
   Layers3,
+  Link2,
   ListChecks,
   RotateCcw,
   ShieldAlert,
   Sparkles,
+  Undo2,
   Users,
   Zap,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
-import { applyActionUpdate, getReadiness, getRecoveryPlan } from "@/lib/engine";
-import type { Activity, ActionInstance, ActivityStatus, View } from "@/lib/model";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  applyActionUpdate,
+  completeUpdate,
+  fallbackUpdate,
+  formatDuration,
+  getDependencyInfo,
+  getPriorityActivity,
+  getReadiness,
+  getRecoveryPlan,
+  getStatusLabel,
+  HOLD_NOTE_MAX_LENGTH,
+  holdUpdate,
+  isActionOnHold,
+  isActionResolved,
+  reopenUpdate,
+  validateHold,
+  WAITING_ON_MAX_LENGTH,
+  type HoldInput,
+} from "@/lib/engine";
+import type { Activity, ActionInstance, ActionUpdate, ActivityStatus, Readiness, View } from "@/lib/model";
 import { PLAYBOOKS, getPlaybook } from "@/lib/playbooks";
-import { createActivity, resetActivities } from "@/lib/seed";
-import { clearActivities, loadActivities, saveActivities } from "@/lib/storage";
+import { createActivity, resetActivities, RESCUE_ACTIVITY_ID, RESCUE_LEAD_MINUTES } from "@/lib/seed";
+import { clearDemo, loadDemo, saveDemo } from "@/lib/storage";
 
 function formatDate(date: Date, options: Intl.DateTimeFormatOptions = {}) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -48,12 +70,13 @@ function formatTime(date: Date) {
   }).format(date);
 }
 
+function minutesToStart(startsAt: string, now: Date) {
+  return (new Date(startsAt).getTime() - now.getTime()) / 60_000;
+}
+
 function remainingLabel(startsAt: string, now: Date) {
-  const minutes = Math.max(0, Math.floor((new Date(startsAt).getTime() - now.getTime()) / 60_000));
-  if (minutes < 60) return `${minutes} min remaining`;
-  const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  return remainder ? `${hours}h ${remainder}m remaining` : `${hours}h remaining`;
+  const minutes = minutesToStart(startsAt, now);
+  return minutes > 0 ? `${formatDuration(minutes)} remaining` : `Started ${formatDuration(-minutes)} ago`;
 }
 
 function dueLabel(action: ActionInstance, activity: Activity, now: Date) {
@@ -72,42 +95,150 @@ function dueLabel(action: ActionInstance, activity: Activity, now: Date) {
   return `Due ${formatDate(dueAt)}`;
 }
 
-function statusLabel(status: ActivityStatus) {
-  const labels: Record<ActivityStatus, string> = {
-    planned: "Planned",
-    preparing: "Preparing",
-    "needs-attention": "Needs attention",
-    "at-risk": "At risk",
-    recovery: "Recovery",
-    ready: "Ready",
-    completed: "Completed",
-    cancelled: "Cancelled",
-  };
-  return labels[status];
-}
-
 function StatusBadge({ status }: { status: ActivityStatus }) {
-  return <span className={`badge badge-${status}`}>{statusLabel(status)}</span>;
+  return <span className={`badge badge-${status}`}>{getStatusLabel(status)}</span>;
 }
 
 function CriticalityBadge({ value }: { value: ActionInstance["criticality"] }) {
   return <span className={`badge badge-${value}`}>{value}</span>;
 }
 
+function HoldBadge({ action }: { action: ActionInstance }) {
+  if (action.status === "waiting") return <span className="badge badge-waiting"><Hourglass size={10} /> Waiting</span>;
+  if (action.status === "blocked") return <span className="badge badge-blocked"><Ban size={10} /> Blocked</span>;
+  return null;
+}
+
+function HoldSummary({ action }: { action: ActionInstance }) {
+  if (!isActionOnHold(action)) return null;
+  return (
+    <div className={`hold-note hold-note-${action.status}`}>
+      {action.status === "waiting" ? (
+        <><strong>Waiting on {action.waitingOn || "another person or team"}</strong>{action.statusNote ? ` — ${action.statusNote}` : ""}</>
+      ) : (
+        <><strong>Blocked</strong>{action.statusNote ? ` — ${action.statusNote}` : ""}</>
+      )}
+    </div>
+  );
+}
+
+function HoldForm({
+  action,
+  onSave,
+  onCancel,
+}: {
+  action: ActionInstance;
+  onSave: (input: HoldInput) => void;
+  onCancel: () => void;
+}) {
+  const [kind, setKind] = useState<HoldInput["kind"]>(action.status === "blocked" ? "blocked" : "waiting");
+  const [waitingOn, setWaitingOn] = useState(action.waitingOn ?? (action.status === "not-started" ? action.ownerRole : ""));
+  const [note, setNote] = useState(isActionOnHold(action) ? action.statusNote ?? "" : "");
+  const [error, setError] = useState<string | null>(null);
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const input: HoldInput = { kind, waitingOn, note };
+    const message = validateHold(input);
+    if (message) {
+      setError(message);
+      return;
+    }
+    onSave(input);
+  }
+
+  return (
+    <form className="hold-form" onSubmit={submit} aria-label={`Set ${action.title} on hold`}>
+      <div className="hold-kind" role="radiogroup" aria-label="Hold type">
+        <label className={kind === "waiting" ? "active" : ""}>
+          <input type="radio" name={`kind-${action.id}`} checked={kind === "waiting"} onChange={() => { setKind("waiting"); setError(null); }} />
+          <Hourglass size={12} /> Waiting on someone
+        </label>
+        <label className={kind === "blocked" ? "active" : ""}>
+          <input type="radio" name={`kind-${action.id}`} checked={kind === "blocked"} onChange={() => { setKind("blocked"); setError(null); }} />
+          <Ban size={12} /> Blocked
+        </label>
+      </div>
+      {kind === "waiting" && (
+        <label className="hold-field">
+          <span>Waiting on (person or team)</span>
+          <input value={waitingOn} maxLength={WAITING_ON_MAX_LENGTH} onChange={(event) => setWaitingOn(event.target.value)} placeholder="e.g. Facilities" />
+        </label>
+      )}
+      <label className="hold-field">
+        <span>{kind === "blocked" ? "What is blocking this action?" : "Note (optional)"}</span>
+        <input
+          value={note}
+          maxLength={HOLD_NOTE_MAX_LENGTH}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder={kind === "blocked" ? "e.g. Room double-booked, no alternative confirmed" : "e.g. Asked for Room 2.14 at 09:10"}
+        />
+      </label>
+      {error && <div className="hold-error" role="alert">{error}</div>}
+      <div className="hold-actions">
+        <button className="btn btn-dark btn-sm" type="submit">Save</button>
+        <button className="btn btn-ghost btn-sm" type="button" onClick={onCancel}>Cancel</button>
+      </div>
+    </form>
+  );
+}
+
+function DependencyNotes({ action, activity }: { action: ActionInstance; activity: Activity }) {
+  const info = getDependencyInfo(activity, action.id);
+  const done = isActionResolved(action);
+  if (info.prerequisites.length === 0 && (info.dependents.length === 0 || done)) return null;
+  return (
+    <div className="dependency-notes">
+      {info.openPrerequisites.length > 0 && (
+        <div className="dependency-note dependency-open">
+          <Link2 size={12} />
+          <span>
+            <strong>Needs first:</strong>{" "}
+            {info.openPrerequisites.map((item) => `${item.title} (${item.ownerRole} · ${item.ownerName})`).join("; ")}
+          </span>
+        </div>
+      )}
+      {info.prerequisites.length > 0 && info.openPrerequisites.length === 0 && (
+        <div className="dependency-note">
+          <Check size={12} />
+          <span>Prerequisite done: {info.prerequisites.map((item) => item.action.title).join("; ")}</span>
+        </div>
+      )}
+      {info.dependents.length > 0 && !done && (
+        <div className="dependency-note">
+          <ArrowRight size={12} />
+          <span>Unlocks: {info.dependents.map((item) => item.title).join("; ")}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ActionRow({
   action,
   activity,
   now,
+  holdOpen,
   onToggle,
   onFallback,
+  onOpenHold,
+  onSaveHold,
+  onCancelHold,
+  onRelease,
 }: {
   action: ActionInstance;
   activity: Activity;
   now: Date;
+  holdOpen: boolean;
   onToggle: () => void;
   onFallback?: () => void;
+  onOpenHold: () => void;
+  onSaveHold: (input: HoldInput) => void;
+  onCancelHold: () => void;
+  onRelease: () => void;
 }) {
-  const done = action.status === "done" || action.status === "skipped";
+  const done = isActionResolved(action);
+  const onHold = isActionOnHold(action);
   return (
     <div className="action-row">
       <button
@@ -127,12 +258,23 @@ function ActionRow({
           <span>{action.ownerRole} · {action.ownerName}</span>
           <span>{action.estimatedMinutes} min</span>
           <CriticalityBadge value={action.criticality} />
+          <HoldBadge action={action} />
           {action.fallbackUsed && <span>Fallback recorded</span>}
         </div>
-        {action.statusNote && <div className="fallback-note">{action.statusNote}</div>}
+        <DependencyNotes action={action} activity={activity} />
+        <HoldSummary action={action} />
+        {!onHold && action.statusNote && <div className="fallback-note">{action.statusNote}</div>}
+        {holdOpen && <HoldForm action={action} onSave={onSaveHold} onCancel={onCancelHold} />}
       </div>
       <div className="action-side">
         <span className="time-label">{dueLabel(action, activity, now)}</span>
+        {!done && !holdOpen && (
+          onHold ? (
+            <button className="btn btn-outline btn-sm" type="button" onClick={onRelease}><Undo2 size={12} /> Release hold</button>
+          ) : (
+            <button className="btn btn-outline btn-sm" type="button" onClick={onOpenHold}>Waiting / blocked</button>
+          )
+        )}
         {onFallback && action.fallback && !done && (
           <button className="btn btn-outline btn-sm" type="button" onClick={onFallback}>Use fallback</button>
         )}
@@ -173,19 +315,69 @@ function ActivityRow({
   );
 }
 
+function ReadinessExplanation({ readiness }: { readiness: Readiness }) {
+  if (readiness.status === "completed") {
+    return <div className="readiness-positive"><CheckCircle2 size={17} /> This activity has been completed.</div>;
+  }
+  if (readiness.unresolvedEssential.length === 0) {
+    return <div className="readiness-positive"><CheckCircle2 size={17} /> All Essential pre-start actions are complete.</div>;
+  }
+  const risks = readiness.reasons.filter((reason) => reason.severity === "risk");
+  const attention = readiness.reasons.filter((reason) => reason.severity === "attention");
+  return (
+    <>
+      {risks.length > 0 && (
+        <>
+          <p className="readiness-copy">Why this activity is at risk:</p>
+          <ul className="reason-list">
+            {risks.map((reason, index) => (
+              <li key={`${reason.kind}-${reason.actionId ?? index}`} className="reason-risk"><ShieldAlert size={13} /> <span>{reason.message}</span></li>
+            ))}
+          </ul>
+        </>
+      )}
+      {attention.length > 0 && (
+        <>
+          <p className="readiness-copy">Needs follow-up:</p>
+          <ul className="reason-list">
+            {attention.map((reason, index) => (
+              <li key={`${reason.kind}-${reason.actionId ?? index}`} className="reason-attention"><Clock3 size={13} /> <span>{reason.message}</span></li>
+            ))}
+          </ul>
+        </>
+      )}
+      {readiness.reasons.length === 0 && (
+        <p className="readiness-copy">No risks right now — the open Essential actions are on schedule. Open steps that wait for a prerequisite are not counted as risks until that prerequisite falls behind.</p>
+      )}
+      <p className="readiness-copy" style={{ marginTop: 16 }}>Essential actions still open:</p>
+      <ul className="readiness-list">
+        {readiness.unresolvedEssential.map((action) => (
+          <li key={action.id}><Circle size={8} /> <span>{action.title}</span><small>{action.ownerRole}</small></li>
+        ))}
+      </ul>
+    </>
+  );
+}
+
 export function OperationsHub() {
   const [activities, setActivities] = useState<Activity[]>([]);
-  const [activeId, setActiveId] = useState("activity-training-rescue");
+  const [activeId, setActiveId] = useState(RESCUE_ACTIVITY_ID);
   const [view, setView] = useState<View>("radar");
   const [now, setNow] = useState(() => new Date());
   const [hydrated, setHydrated] = useState(false);
+  const [modified, setModified] = useState(false);
   const [notice, setNotice] = useState("");
+  const [holdTarget, setHoldTarget] = useState<string | null>(null);
 
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    const loaded = loadActivities(new Date());
-    setActivities(loaded);
-    if (loaded.length > 0) setActiveId(loaded[0].id);
+    const loadedAt = new Date();
+    const loaded = loadDemo(loadedAt);
+    setActivities(loaded.activities);
+    setModified(loaded.modified);
+    if (loaded.notice) setNotice(loaded.notice);
+    if (loaded.activities.length > 0) setActiveId(loaded.activities[0].id);
+    setNow(loadedAt);
     setHydrated(true);
   }, []);
   /* eslint-enable react-hooks/set-state-in-effect */
@@ -195,9 +387,11 @@ export function OperationsHub() {
     return () => window.clearInterval(interval);
   }, []);
 
+  // Saving on every clock tick keeps `savedAt` close to the moment the visitor leaves,
+  // so a returning visitor's timeline is only shifted by the time they were actually away.
   useEffect(() => {
-    if (hydrated) saveActivities(activities);
-  }, [activities, hydrated]);
+    if (hydrated) saveDemo(activities, modified, now);
+  }, [activities, modified, now, hydrated]);
 
   const activeActivity = activities.find((activity) => activity.id === activeId) ?? activities[0];
   const readinessItems = useMemo(
@@ -208,53 +402,64 @@ export function OperationsHub() {
     () => [...activities].sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime()),
     [activities],
   );
+  const priority = useMemo(() => getPriorityActivity(activities, now), [activities, now]);
+  const activeReadiness = activeActivity ? getReadiness(activeActivity, now) : null;
   const recoveryPlan = activeActivity ? getRecoveryPlan(activeActivity, now) : [];
-  const remaining = activeActivity ? remainingLabel(activeActivity.startsAt, now) : "";
-  const rescueActivity = activities.find((activity) => activity.id === "activity-training-rescue") ?? orderedActivities[0];
-  const rescueReadiness = rescueActivity ? getReadiness(rescueActivity, now) : null;
   const openCount = readinessItems.filter((item) => !["completed", "cancelled"].includes(item.readiness.status)).length;
   const atRiskCount = readinessItems.filter((item) => ["at-risk", "recovery"].includes(item.readiness.status)).length;
   const overdueActions = activities.reduce((count, activity) => count + activity.actions.filter((action) => {
-    if (action.status === "done" || action.status === "skipped") return false;
+    if (isActionResolved(action)) return false;
     const dueAt = new Date(new Date(activity.startsAt).getTime() + action.dueOffsetMinutes * 60_000);
     return dueAt < now;
   }).length, 0);
 
+  function changeView(nextView: View) {
+    setView(nextView);
+    setHoldTarget(null);
+  }
+
   function openActivity(activity: Activity, nextView: View = "activity") {
     setActiveId(activity.id);
-    setView(nextView);
+    changeView(nextView);
     setNotice("");
   }
 
-  function updateAction(activityId: string, actionId: string, update: Partial<Pick<ActionInstance, "status" | "statusNote" | "fallbackUsed">>) {
+  function updateAction(activityId: string, actionId: string, update: ActionUpdate) {
     setActivities((current) => applyActionUpdate(current, activityId, actionId, update));
+    setModified(true);
   }
 
   function toggleAction(activity: Activity, action: ActionInstance) {
-    const nextStatus = action.status === "done" || action.status === "skipped" ? "not-started" : "done";
-    updateAction(activity.id, action.id, {
-      status: nextStatus,
-      statusNote: nextStatus === "not-started" ? undefined : "Completed in the demo workspace.",
-      fallbackUsed: false,
-    });
+    updateAction(
+      activity.id,
+      action.id,
+      isActionResolved(action) ? reopenUpdate() : completeUpdate("Completed in the demo workspace."),
+    );
   }
 
   function applyFallback(activity: Activity, action: ActionInstance) {
     if (!action.fallback) return;
-    updateAction(activity.id, action.id, {
-      status: "done",
-      statusNote: `Fallback used: ${action.fallback}`,
-      fallbackUsed: true,
-    });
+    updateAction(activity.id, action.id, fallbackUpdate(action));
+  }
+
+  function saveHold(activity: Activity, action: ActionInstance, input: HoldInput) {
+    updateAction(activity.id, action.id, holdUpdate(input));
+    setHoldTarget(null);
+  }
+
+  function releaseHold(activity: Activity, action: ActionInstance) {
+    updateAction(activity.id, action.id, reopenUpdate());
   }
 
   function resetDemo() {
-    clearActivities();
-    const fresh = resetActivities(new Date());
-    setActivities(fresh);
-    setActiveId("activity-training-rescue");
-    setView("radar");
-    setNotice("Demo data restored. The training scenario starts in 45 minutes.");
+    clearDemo();
+    const resetAt = new Date();
+    setActivities(resetActivities(resetAt));
+    setModified(false);
+    setNow(resetAt);
+    setActiveId(RESCUE_ACTIVITY_ID);
+    changeView("radar");
+    setNotice(`Demo data restored. The training scenario starts in ${RESCUE_LEAD_MINUTES} minutes.`);
   }
 
   function createFromPlaybook(playbookId: string) {
@@ -269,8 +474,9 @@ export function OperationsHub() {
       { location: "To be confirmed" },
     );
     setActivities((current) => [created, ...current]);
+    setModified(true);
     setActiveId(created.id);
-    setView("activity");
+    changeView("activity");
     setNotice("New activity created from the playbook, scheduled two weeks from now.");
   }
 
@@ -294,6 +500,13 @@ export function OperationsHub() {
         : view === "activity" ? "One activity, its preparation steps and what still needs to happen."
           : "A practical plan for the time and options still available.";
 
+  const priorityKicker = priority
+    ? priority.readiness.status === "recovery" ? "Priority activity · Needs attention now"
+      : priority.readiness.status === "at-risk" ? "Priority activity · At risk"
+        : "Priority activity · Needs follow-up"
+    : "";
+  const priorityReason = priority?.readiness.reasons.find((reason) => reason.severity === "risk") ?? priority?.readiness.reasons[0];
+
   return (
     <div className="hub-shell">
       <aside className="sidebar">
@@ -314,7 +527,7 @@ export function OperationsHub() {
                 key={item.id}
                 type="button"
                 className={`nav-button ${view === item.id ? "active" : ""}`}
-                onClick={() => { setView(item.id); setNotice(""); }}
+                onClick={() => { changeView(item.id); setNotice(""); }}
               >
                 <Icon size={16} strokeWidth={1.8} />
                 {item.label}
@@ -326,7 +539,7 @@ export function OperationsHub() {
               <button
                 type="button"
                 className={`nav-button ${view === "activity" ? "active" : ""}`}
-                onClick={() => setView("activity")}
+                onClick={() => changeView("activity")}
               >
                 <ListChecks size={16} strokeWidth={1.8} />
                 Activity Workspace
@@ -334,7 +547,7 @@ export function OperationsHub() {
               <button
                 type="button"
                 className={`nav-button ${view === "recovery" ? "active" : ""}`}
-                onClick={() => setView("recovery")}
+                onClick={() => changeView("recovery")}
               >
                 <Zap size={16} strokeWidth={1.8} />
                 Rapid Recovery
@@ -374,12 +587,12 @@ export function OperationsHub() {
             <p className="page-description">{subtitle}</p>
           </div>
           {view === "radar" && (
-            <button className="btn btn-dark" type="button" onClick={() => setView("playbooks")}>
+            <button className="btn btn-dark" type="button" onClick={() => changeView("playbooks")}>
               <Sparkles size={15} /> New activity
             </button>
           )}
           {(view === "activity" || view === "recovery") && (
-            <button className="btn btn-outline" type="button" onClick={() => setView("radar")}>
+            <button className="btn btn-outline" type="button" onClick={() => changeView("radar")}>
               <ArrowLeft size={14} /> Back to radar
             </button>
           )}
@@ -389,28 +602,45 @@ export function OperationsHub() {
 
         {view === "radar" && (
           <>
-            {rescueActivity && rescueReadiness && rescueReadiness.unresolvedEssential.length > 0 && (
+            {priority && (
               <section className="hero-panel">
                 <div>
-                  <div className="hero-kicker">Priority activity · Needs attention now</div>
-                  <h2 className="hero-title">{rescueActivity.title} starts in {remaining}</h2>
+                  <div className="hero-kicker">{priorityKicker}</div>
+                  <h2 className="hero-title">
+                    {priority.activity.title} starts in {formatDuration(minutesToStart(priority.activity.startsAt, now))}
+                  </h2>
                   <p className="hero-copy">
-                    {rescueReadiness.unresolvedEssential.length} essential actions are still open.
-                    See what must happen first, what can be simplified and what can follow later.
+                    {priority.readiness.unresolvedEssential.length} essential action{priority.readiness.unresolvedEssential.length === 1 ? " is" : "s are"} still open.
+                    {priority.readiness.status === "recovery"
+                      ? " See what must happen first, what can be simplified and what can follow later."
+                      : priorityReason ? ` ${priorityReason.message}` : ""}
                   </p>
                   <div className="hero-meta">
-                    <span><CalendarDays size={13} /> {formatDate(new Date(rescueActivity.startsAt), { year: "numeric" })} · {formatTime(new Date(rescueActivity.startsAt))}</span>
-                    <span><Users size={13} /> {rescueActivity.coordinator}</span>
-                    <span><ShieldAlert size={13} /> {rescueReadiness.label}</span>
+                    <span><CalendarDays size={13} /> {formatDate(new Date(priority.activity.startsAt), { year: "numeric" })} · {formatTime(new Date(priority.activity.startsAt))}</span>
+                    <span><Users size={13} /> {priority.activity.coordinator}</span>
+                    <span><ShieldAlert size={13} /> {priority.readiness.label}</span>
                   </div>
                 </div>
                 <div className="hero-actions">
-                  <button className="btn btn-primary" type="button" onClick={() => openActivity(rescueActivity, "recovery")}>
-                    Open Rapid Recovery <ArrowRight size={15} />
-                  </button>
-                  <button className="btn btn-white" type="button" onClick={() => openActivity(rescueActivity)}>
-                    View activity
-                  </button>
+                  {priority.readiness.status === "recovery" ? (
+                    <>
+                      <button className="btn btn-primary" type="button" onClick={() => openActivity(priority.activity, "recovery")}>
+                        Open Rapid Recovery <ArrowRight size={15} />
+                      </button>
+                      <button className="btn btn-white" type="button" onClick={() => openActivity(priority.activity)}>
+                        View activity
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button className="btn btn-primary" type="button" onClick={() => openActivity(priority.activity)}>
+                        View activity <ArrowRight size={15} />
+                      </button>
+                      <button className="btn btn-white" type="button" onClick={() => openActivity(priority.activity, "recovery")}>
+                        Open Rapid Recovery
+                      </button>
+                    </>
+                  )}
                 </div>
               </section>
             )}
@@ -445,7 +675,7 @@ export function OperationsHub() {
                     <div className="panel-title">Upcoming activities</div>
                     <div className="panel-sub">Sorted by start time · select an activity to open its workspace</div>
                   </div>
-                  <button className="link-button" type="button" onClick={() => setView("playbooks")}>Create <ArrowRight size={13} /></button>
+                  <button className="link-button" type="button" onClick={() => changeView("playbooks")}>Create <ArrowRight size={13} /></button>
                 </div>
                 {orderedActivities.map((activity) => (
                   <ActivityRow key={activity.id} activity={activity} now={now} onClick={() => openActivity(activity)} />
@@ -469,7 +699,7 @@ export function OperationsHub() {
                   </div>
                 ))}
                 <div style={{ padding: "12px 18px" }}>
-                  <button className="link-button" type="button" onClick={() => setView("playbooks")}>View all playbooks <ArrowRight size={13} /></button>
+                  <button className="link-button" type="button" onClick={() => changeView("playbooks")}>View all playbooks <ArrowRight size={13} /></button>
                 </div>
               </section>
             </div>
@@ -518,7 +748,7 @@ export function OperationsHub() {
           </>
         )}
 
-        {view === "activity" && activeActivity && (
+        {view === "activity" && activeActivity && activeReadiness && (
           <>
             <div className="activity-summary">
               <div>
@@ -531,9 +761,9 @@ export function OperationsHub() {
                 </div>
               </div>
               <div style={{ display: "grid", justifyItems: "end", gap: 10 }}>
-                <StatusBadge status={getReadiness(activeActivity, now).status} />
-                {getReadiness(activeActivity, now).status === "recovery" && (
-                  <button className="btn btn-dark btn-sm" type="button" onClick={() => setView("recovery")}>Open Rapid Recovery <Zap size={13} /></button>
+                <StatusBadge status={activeReadiness.status} />
+                {activeReadiness.status === "recovery" && (
+                  <button className="btn btn-dark btn-sm" type="button" onClick={() => changeView("recovery")}>Open Rapid Recovery <Zap size={13} /></button>
                 )}
               </div>
             </div>
@@ -542,7 +772,7 @@ export function OperationsHub() {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">Preparation timeline</div>
-                  <div className="panel-sub">Complete an action to update the readiness explanation. Dependencies remain visible.</div>
+                  <div className="panel-sub">Complete an action, or mark it as waiting on someone or blocked. Dependencies show what has to happen first.</div>
                 </div>
                 <span className="badge badge-planned">{activeActivity.actions.filter((action) => action.status === "done").length} / {activeActivity.actions.length} done</span>
               </div>
@@ -553,8 +783,13 @@ export function OperationsHub() {
                     action={action}
                     activity={activeActivity}
                     now={now}
+                    holdOpen={holdTarget === action.id}
                     onToggle={() => toggleAction(activeActivity, action)}
                     onFallback={action.fallback ? () => applyFallback(activeActivity, action) : undefined}
+                    onOpenHold={() => setHoldTarget(action.id)}
+                    onSaveHold={(input) => saveHold(activeActivity, action, input)}
+                    onCancelHold={() => setHoldTarget(null)}
+                    onRelease={() => releaseHold(activeActivity, action)}
                   />
                 ))}
               </div>
@@ -564,23 +799,12 @@ export function OperationsHub() {
               <div className="panel-head">
                 <div>
                   <div className="panel-title">Readiness explanation</div>
-                  <div className="panel-sub">The status is derived from Essential actions, due times and blockers — not a weighted score.</div>
+                  <div className="panel-sub">Derived from Essential actions, deadlines, remaining work, holds and dependencies — not a weighted score.</div>
                 </div>
-                <StatusBadge status={getReadiness(activeActivity, now).status} />
+                <StatusBadge status={activeReadiness.status} />
               </div>
               <div className="readiness-body">
-                {getReadiness(activeActivity, now).unresolvedEssential.length === 0 ? (
-                  <div className="readiness-positive"><CheckCircle2 size={17} /> All Essential pre-start actions are complete.</div>
-                ) : (
-                  <>
-                    <p className="readiness-copy">The activity is not ready because these Essential actions remain unresolved:</p>
-                    <ul className="readiness-list">
-                      {getReadiness(activeActivity, now).unresolvedEssential.map((action) => (
-                        <li key={action.id}><Circle size={8} /> <span>{action.title}</span><small>{action.ownerRole}</small></li>
-                      ))}
-                    </ul>
-                  </>
-                )}
+                <ReadinessExplanation readiness={activeReadiness} />
               </div>
             </section>
           </>
@@ -591,10 +815,10 @@ export function OperationsHub() {
             <div className="recovery-intro">
               <div>
                 <div className="hero-kicker">Rapid Recovery · {activeActivity.title}</div>
-                <div className="recovery-clock">{remaining}</div>
-                <p className="hero-copy" style={{ marginTop: 9 }}>A time-aware action order based on criticality, available time, dependencies and playbook fallbacks.</p>
+                <div className="recovery-clock">{remainingLabel(activeActivity.startsAt, now)}</div>
+                <p className="hero-copy" style={{ marginTop: 9 }}>A time-aware action order based on criticality, available time, dependencies, holds and playbook fallbacks.</p>
               </div>
-              <button className="btn btn-white" type="button" onClick={() => setView("activity")}>View full activity <ArrowRight size={14} /></button>
+              <button className="btn btn-white" type="button" onClick={() => changeView("activity")}>View full activity <ArrowRight size={14} /></button>
             </div>
             {recoveryPlan.map((group) => (
               <section className="recovery-group" key={group.id}>
@@ -607,19 +831,29 @@ export function OperationsHub() {
                 ) : group.actions.map((action) => (
                   <div className="recovery-action" key={action.id}>
                     <div>
-                      <div className="recovery-action-title">{action.title}</div>
+                      <div className="recovery-action-title">{action.title} <HoldBadge action={action} /></div>
                       <div className="recovery-action-meta">{action.ownerRole} · {action.ownerName} · approx. {action.estimatedMinutes} min</div>
+                      <div className="recovery-reason">{group.explanations[action.id]}</div>
                       {action.fallback && (
                         <div className="fallback-note"><strong>Fallback:</strong> {action.fallback}</div>
                       )}
-                      {action.dependsOn.length > 0 && (
-                        <div className="recovery-action-meta">Depends on: {action.dependsOn.map((id) => activeActivity.actions.find((item) => item.id === id)?.title ?? id).join(", ")}</div>
+                      {holdTarget === action.id && (
+                        <HoldForm
+                          action={action}
+                          onSave={(input) => saveHold(activeActivity, action, input)}
+                          onCancel={() => setHoldTarget(null)}
+                        />
                       )}
                     </div>
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 7 }}>
-                      <button className="btn btn-outline btn-sm" type="button" onClick={() => updateAction(activeActivity.id, action.id, { status: "done", statusNote: "Completed in Rapid Recovery." })}>Mark done</button>
+                      <button className="btn btn-outline btn-sm" type="button" onClick={() => updateAction(activeActivity.id, action.id, completeUpdate("Completed in Rapid Recovery."))}>Mark done</button>
                       {action.fallback && (
                         <button className="btn btn-dark btn-sm" type="button" onClick={() => applyFallback(activeActivity, action)}>Use fallback</button>
+                      )}
+                      {isActionOnHold(action) ? (
+                        <button className="btn btn-ghost btn-sm" type="button" onClick={() => releaseHold(activeActivity, action)}><Undo2 size={12} /> Release hold</button>
+                      ) : holdTarget !== action.id && (
+                        <button className="btn btn-ghost btn-sm" type="button" onClick={() => setHoldTarget(action.id)}>Waiting / blocked</button>
                       )}
                     </div>
                   </div>

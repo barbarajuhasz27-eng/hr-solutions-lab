@@ -181,6 +181,36 @@ button:disabled { cursor: not-allowed; opacity: .5; }
 .readiness-list li svg { color: #b56b46; fill: #f8e9e0; }
 .readiness-list small { color: #89919b; font-size: 10px; }
 .readiness-positive { display: flex; align-items: center; gap: 9px; color: #376d68; font-size: 12px; }
+
+/* Waiting / blocked holds, dependencies and readiness reasons */
+.badge-waiting { color: #896b26; background: #f7f1dd; text-transform: none; letter-spacing: .02em; }
+.badge-blocked { color: #9b5532; background: #f9eee6; text-transform: none; letter-spacing: .02em; }
+.dependency-notes { display: grid; gap: 4px; margin-top: 8px; }
+.dependency-note { display: flex; align-items: flex-start; gap: 6px; font-size: 10px; line-height: 1.45; color: #7c8795; }
+.dependency-note svg { flex: 0 0 auto; margin-top: 1px; }
+.dependency-open { color: #5a6577; }
+.dependency-open svg { color: #b0803a; }
+.hold-note { border-radius: 7px; padding: 7px 9px; font-size: 10px; line-height: 1.45; margin-top: 8px; }
+.hold-note-waiting { color: #6f5a22; background: #faf5e6; }
+.hold-note-blocked { color: #8a4b2c; background: #fbf0ea; }
+.hold-form { margin-top: 10px; border: 1px solid var(--color-line); border-radius: 10px; padding: 12px; background: #fbfaf7; display: grid; gap: 10px; max-width: 460px; }
+.hold-kind { display: flex; flex-wrap: wrap; gap: 6px; }
+.hold-kind label { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--color-line); background: #fff; border-radius: 8px; padding: 6px 10px; font-size: 11px; color: #536074; cursor: pointer; }
+.hold-kind label.active { border-color: #8eb6a6; background: #edf5f0; color: #2f5f57; }
+.hold-kind input { position: absolute; opacity: 0; pointer-events: none; }
+.hold-kind label:focus-within { outline: 2px solid #376d68; outline-offset: 2px; }
+.hold-field { display: grid; gap: 5px; font-size: 10px; color: #6d7685; }
+.hold-field input { border: 1px solid #dcdcd6; border-radius: 8px; padding: 8px 10px; font-size: 12px; color: var(--color-ink); background: #fff; }
+.hold-error { color: #9b4a2c; font-size: 11px; }
+.hold-actions { display: flex; gap: 6px; }
+.recovery-reason { color: #5d6878; font-size: 10px; margin-top: 5px; line-height: 1.45; }
+.recovery-action-title .badge { margin-left: 6px; vertical-align: middle; }
+.reason-list { list-style: none; margin: 0 0 14px; padding: 0; display: grid; gap: 8px; }
+.reason-list li { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: 8px; align-items: start; font-size: 11px; line-height: 1.5; color: #3d4859; }
+.reason-list li svg { margin-top: 2px; }
+.reason-risk svg { color: #b56b46; }
+.reason-attention svg { color: #a98632; }
+
 @media (max-width: 680px) {
   .activity-summary { align-items: flex-start; flex-direction: column; padding: 17px; }
   .readiness-body { padding: 15px; }

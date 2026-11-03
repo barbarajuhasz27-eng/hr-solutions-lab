@@ -45,7 +45,13 @@ export interface ActionInstance extends ActionTemplate {
   ownerName: string;
   statusNote?: string;
   fallbackUsed?: boolean;
+  /** Person or team the action is waiting on (only meaningful when status is "waiting"). */
+  waitingOn?: string;
 }
+
+export type ActionUpdate = Partial<
+  Pick<ActionInstance, "status" | "statusNote" | "fallbackUsed" | "waitingOn">
+>;
 
 export interface Activity {
   id: string;
@@ -64,10 +70,31 @@ export interface RecoveryGroup {
   title: string;
   description: string;
   actions: ActionInstance[];
+  /** Why each action landed in this group, keyed by action id. */
+  explanations: Record<string, string>;
+}
+
+export type ReadinessReasonKind =
+  | "start-passed"
+  | "blocked"
+  | "deadline-passed"
+  | "waiting-near-deadline"
+  | "insufficient-time"
+  | "dependency-risk"
+  | "waiting"
+  | "due-soon";
+
+export interface ReadinessReason {
+  kind: ReadinessReasonKind;
+  /** "risk" reasons make an activity At risk; "attention" reasons only flag it for follow-up. */
+  severity: "risk" | "attention";
+  message: string;
+  actionId?: string;
 }
 
 export interface Readiness {
   status: ActivityStatus;
   label: string;
   unresolvedEssential: ActionInstance[];
+  reasons: ReadinessReason[];
 }

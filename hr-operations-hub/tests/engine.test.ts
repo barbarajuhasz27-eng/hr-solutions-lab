@@ -71,7 +71,9 @@ describe("HR Operations readiness engine", () => {
     expect(mustDoIds).toContain("it-setup");
   });
 
-  it("marks an activity at risk when an essential prerequisite is still unresolved", () => {
+  it("does not mark an activity at risk only because an essential step waits for an on-schedule prerequisite", () => {
+    // Previously any open prerequisite counted as a blocker. The room is due in exactly 24 hours,
+    // so it needs attention, but IT setup waiting for it is not yet an operational risk.
     const upcoming = activities.find((activity) => activity.id === "activity-training-upcoming");
     expect(upcoming).toBeDefined();
     const withOpenRoom = {
@@ -80,7 +82,24 @@ describe("HR Operations readiness engine", () => {
         action.id === "room-confirmed" ? { ...action, status: "not-started" as const } : action,
       ),
     };
-    expect(getReadiness(withOpenRoom, now).status).toBe("at-risk");
+    const readiness = getReadiness(withOpenRoom, now);
+    expect(readiness.status).toBe("needs-attention");
+    expect(readiness.reasons.some((reason) => reason.severity === "risk")).toBe(false);
+  });
+
+  it("marks an activity at risk when an open prerequisite has missed its own deadline", () => {
+    const upcoming = activities.find((activity) => activity.id === "activity-training-upcoming");
+    expect(upcoming).toBeDefined();
+    const withOverdueRoom = {
+      ...upcoming!,
+      actions: upcoming!.actions.map((action) =>
+        action.id === "room-confirmed" ? { ...action, status: "not-started" as const } : action,
+      ),
+    };
+    const later = new Date(now.getTime() + 36 * 60 * 60_000); // room deadline passed 12h ago
+    const readiness = getReadiness(withOverdueRoom, later);
+    expect(readiness.status).toBe("at-risk");
+    expect(readiness.reasons.find((reason) => reason.actionId === "it-setup")?.kind).toBe("dependency-risk");
   });
 
   it("keeps an activity in preparation when its next essential action is several days away", () => {

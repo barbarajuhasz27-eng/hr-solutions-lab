@@ -51,13 +51,17 @@ export function createActivity(
   return activity;
 }
 
+/** The lead demo scenario: a training session that starts this many minutes after seeding. */
+export const RESCUE_ACTIVITY_ID = "activity-training-rescue";
+export const RESCUE_LEAD_MINUTES = 45;
+
 export function createSeedActivities(now: Date): Activity[] {
-  const rescueStart = new Date(now.getTime() + 45 * 60_000);
+  const rescueStart = new Date(now.getTime() + RESCUE_LEAD_MINUTES * 60_000);
   const rescue = createActivity(
     "training-session",
     "Leading through change",
     rescueStart,
-    "activity-training-rescue",
+    RESCUE_ACTIVITY_ID,
     { location: "Room 2.14 · HQ" },
   );
 
