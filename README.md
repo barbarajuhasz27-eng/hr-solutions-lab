@@ -60,7 +60,7 @@ Built with Next.js, React and TypeScript, with 332 automated tests. It runs loca
 
 A focused workspace for HR Generalists to prepare and coordinate recurring and one-off HR activities. Reusable playbooks define timed actions, owners and dependencies; a Rapid Recovery view helps prioritise essential work when an activity is running late.
 
-**Status:** In development — product direction and MVP scope defined. Implementation not started.
+**Status:** In development — first functional slice committed for the training playbook and 45-minute Rapid Recovery flow; automated validation is in progress.
 
 ### 04 · Compensation Intelligence
 **Salary Structures & Benefits Analytics**
