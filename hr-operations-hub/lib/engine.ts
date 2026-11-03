@@ -123,7 +123,9 @@ export function getRecoveryPlan(activity: Activity, now: Date): RecoveryGroup[] 
       continue;
     }
 
-    if (action.fallback) {
+    if (action.criticality === "optional") {
+      followUp.push(action);
+    } else if (action.fallback) {
       canSimplify.push(action);
     } else {
       followUp.push(action);
