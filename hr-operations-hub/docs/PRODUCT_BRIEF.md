@@ -2,193 +2,232 @@
 
 ## 1. Product summary
 
-HR Operations Hub is an **Employee Services & HR Case Management** prototype for HR Operations teams.
+HR Operations Hub is an **HR Operations Readiness & Playbooks** prototype for HR Generalists and lean HR teams.
 
-It provides one structured route for employees to raise common HR requests and one operational workspace for HR teams to receive, triage, assign, resolve and report on those requests.
+It helps one person or a small team prepare and coordinate recurring and one-off HR activities that depend on multiple actions, people and hand-offs. A reusable HR-specific playbook turns an activity into a timed sequence of actions. The Operations Radar makes upcoming commitments visible. A Rapid Recovery view helps the HR Generalist decide what to do first when preparation has fallen behind.
 
-> Every HR request should have a clear owner, a visible next step and a traceable outcome.
+> Keep HR operations from slipping through the cracks.
 
-The prototype is designed to demonstrate HR service-delivery thinking: structured intake, transparent case ownership, consistent workflow states, employee communication and useful operational reporting.
+### Product hypothesis / proposed USP
+
+**Time-aware HR playbooks with a rapid-recovery mode.**
+
+The Hub focuses on a practical question that a generic checklist does not answer well:
+
+**What must still happen for this HR activity to run successfully, who or what is it waiting for, and what should I do first given the time remaining?**
+
+This is a focused product hypothesis. It is not a claim that no other platform offers task scheduling or workflow automation.
 
 ## 2. Problem statement
 
-Employees often contact HR through a mixture of shared inboxes, direct messages, conversations and forms. Requests can arrive without the information needed to process them, ownership may be unclear, follow-ups can become fragmented, and employees may not know whether anyone is working on their request.
+HR Generalists often coordinate work that is important but not large enough to justify a formal project. A training session may require a trainer, participants, room, IT setup, presentation materials and follow-up. A performance-review launch, employee information event, policy communication or recurring HR deadline may also depend on several people completing small steps at the right time.
 
-For HR Operations, this creates avoidable coordination work and makes it difficult to understand demand: which request types are increasing, where cases are waiting, which handovers are delayed and what is accumulating in the backlog.
+These activities can be spread across calendars, inboxes, spreadsheets, chat messages and personal reminders. The result is not necessarily a lack of task-management software; it is that the operational sequence, lead times, dependencies and ownership are not always captured in one reusable HR-specific view.
 
-The prototype explores how a consistent case workflow could make service delivery more visible and manageable without turning HR into an impersonal ticket factory.
+When a step is forgotten, a general task list may show that it is overdue without helping the HR Generalist determine what remains essential, what can be simplified and what fallback is still possible.
 
-## 3. Target users and stakeholders
+The 45-minute training example is the lead scenario: the activity is about to start, but room, IT, participants and materials need urgent coordination.
 
-### Primary user — Employee
+## 3. Target users
 
-Needs a straightforward way to submit a request, understand what information is needed, see progress and receive clear updates without chasing HR through multiple channels.
+### Primary user — HR Generalist
 
-### Primary operational user — HR Operations Specialist
+A hands-on HR professional in a small or lean HR team who coordinates a wide range of operational activities alongside daily employee support. They need a simple way to remember, prepare and follow up on work that crosses HR, IT, Facilities, managers, trainers and other internal stakeholders.
 
-Needs a reliable queue, structured case information, clear priority and service target, ownership, work notes, follow-up reminders and a traceable history.
+### Secondary users
 
-### Supporting stakeholders
+- HR Operations specialist who coordinates recurring cycles and operational deadlines.
+- L&D coordinator who organises training sessions and learning events.
+- People Partner who launches a review cycle or employee initiative.
+- Occasional contributors from IT, Facilities, Payroll or line management.
 
-- Payroll specialist — handles payroll-related cases routed to the payroll queue.
-- Benefits specialist — handles benefits and insurance administration requests.
-- HR Systems specialist — handles employee self-service and HR system access issues.
-- People Partner / HR generalist — handles employee lifecycle and policy questions outside standard HR Operations processing.
-
-The MVP represents stakeholders through queues and case owners. It does not implement separate stakeholder accounts or real permissions.
+The MVP is designed around the HR Generalist as the accountable coordinator. Other contributors are represented as assigned owners, not as separate authenticated users.
 
 ## 4. Product goals
 
-1. Give employees one clear entry point for common HR service requests.
-2. Collect only the information needed to route and process each request.
-3. Make case ownership, status, priority and service target visible to HR Operations.
-4. Keep employee-visible communication separate from internal HR work notes.
-5. Make waiting states and hand-offs explicit rather than hiding them in free text.
-6. Provide operational insights with transparent definitions and no misleading composite score.
-7. Demonstrate how a repeatable HR service process can be designed, documented and evaluated.
+1. Make upcoming HR activities visible in one Operations Radar.
+2. Turn common HR activities into reusable, HR-specific playbooks.
+3. Calculate action due dates from an activity's start date or deadline using explicit lead times.
+4. Make owners, dependencies and critical actions visible.
+5. Explain readiness through concrete unresolved actions rather than an opaque completion score.
+6. Give the HR Generalist a useful recovery plan when an activity is late or at risk.
+7. Capture a short post-activity review so recurring playbooks can be improved.
+8. Demonstrate practical HR Operations process design without becoming a generic project-management tool.
 
 ## 5. MVP functional scope
 
-### A. Employee Portal
+### A. Operations Radar
 
-- Overview of the employee's submitted requests.
-- New request flow with a controlled request category and topic.
-- Guided form fields that change based on the selected request type.
-- Confirmation with a case reference number and expected next step.
-- Case detail page with current status, last update and employee-visible messages.
-- Ability to add a clarification or reply when HR requests information.
-- Clear guidance not to enter sensitive personal details or attach confidential documents.
+- Calendar / timeline of upcoming HR activities.
+- Overview sections for Today, Next 7 Days, At Risk and Overdue.
+- Activity cards show date/time, activity type, coordinator, readiness state and next critical action.
+- Quick-create an activity from a playbook or as a small blank activity.
+- Recurring activity instances can be generated from a defined recurrence pattern.
+- Filters by activity type, date and readiness state.
+- No employee-request inbox, ticket queue or generic backlog.
 
-### B. HR Service Desk
+### B. Playbook Library
 
-- Queue overview with total open cases, unassigned cases, cases awaiting input and overdue cases.
-- Search and filters by status, category, queue, owner, priority and age.
-- Case detail with request summary, structured information, service target, assigned queue and owner.
-- Triage actions: accept, assign, reprioritise, request information, place on hold, resolve and close.
-- Internal notes that are not visible in the employee portal.
-- Employee-visible updates that are clearly separated from internal notes.
-- Chronological activity timeline for status and ownership changes.
-- Reopen flow for a case that needs further work.
+Start with a deliberately small library of HR-specific playbooks:
 
-### C. Operations Insights
+1. **Training session** — trainer, participants, room, IT / presentation setup, materials, attendance and follow-up.
+2. **Employee information session** — topic and speaker, audience, invitation, room / virtual link, presentation and follow-up.
+3. **Performance review cycle launch** — timeline, manager communication, forms / system readiness, reminders and escalation checkpoints.
+4. **Recurring HR monthly deadline** — preparation, input collection, validation, hand-off and completion confirmation. Use a generic example; do not implement payroll calculations.
+5. **Policy or process communication** — content approval, audience, communication channel, publication and acknowledgement follow-up.
 
-- Incoming request volume by category and period.
-- Open backlog by status and queue.
-- Cases past their illustrative service target.
-- Median resolution time for resolved cases, with the calculation displayed.
-- Reopened-case count and rate.
-- Volume and ageing by request category.
+Each playbook defines:
+- actions and default owners / stakeholder roles;
+- relative lead time (for example, 7 days before, 1 day before, 45 minutes before);
+- dependencies;
+- criticality: Essential, Important or Optional;
+- estimated effort;
+- completion evidence or a simple completion note;
+- one or more fallback options for critical actions where sensible.
 
-Every metric must have a definition, a stated population and a visible synthetic-data disclaimer. No weighted service-quality score.
+Templates are editable in the prototype. A playbook is an operational guide, not an employer policy or legal requirement.
 
-## 6. Initial request taxonomy
+### C. Activity Workspace
 
-Use a deliberately small taxonomy for the MVP:
+- Activity name, type, start date / time, coordinator and current readiness.
+- Generated action timeline sorted by due time and critical path.
+- Clear owner for every action; unassigned actions are visible.
+- Statuses: Not started, In progress, Waiting, Done, Blocked and Skipped with reason.
+- Dependency links: an action can be blocked by a prerequisite.
+- Action detail explains why it matters, when it is due and who is responsible.
+- Readiness explanation lists unresolved Essential actions and blockers.
+- Activity notes use synthetic content only.
+- Duplicate / create from an existing activity.
 
-| Category | Example topics | Suggested queue |
-|---|---|---|
-| Employment documents | Employment confirmation, contract copy, standard HR letter | HR Operations |
-| Personal data changes | Address, bank details, emergency contact | HR Operations |
-| Payroll questions | Payslip clarification, payroll data correction request | Payroll |
-| Benefits & insurance | Benefits information, insurance administration | Benefits |
-| Time & absence administration | Leave balance question, absence process question | HR Operations |
-| HR systems & access | Employee self-service access, HR portal issue | HR Systems |
-| Policy & general HR questions | Policy clarification, who-to-contact question | People Support |
+### D. Rapid Recovery Mode
 
-The taxonomy is a product-design starting point, not a statement of any employer's actual policies or service catalogue. Do not request diagnoses, medical explanations, bank account numbers, identity documents or other sensitive details in the prototype.
+This is the lead differentiating interaction.
 
-## 7. Case workflow
+When an activity is close to its start time and essential preparation is incomplete, the HR Generalist can open **Rapid Recovery**.
 
-Use the following controlled states:
+It should:
+- calculate the time remaining until the activity starts;
+- show only unfinished actions that still matter to the successful start;
+- separate **Must do now**, **Can simplify** and **Can follow up later**;
+- respect dependencies and identify actions waiting on another person or team;
+- show the fastest practical next action and an alternative / fallback when the original step can no longer be completed;
+- allow the coordinator to record a decision (completed, fallback used, deferred, no longer needed);
+- avoid false certainty: the tool recommends an order based on the playbook's authored priorities; the HR Generalist makes the decision.
 
-1. **Submitted** — request received; not yet triaged.
-2. **In review** — HR has accepted the request and is assessing it.
-3. **In progress** — an owner is actively processing the case.
-4. **Waiting for employee** — the employee needs to provide clarification.
-5. **Waiting for another team** — another internal queue or specialist needs to act.
-6. **Resolved** — HR has recorded the outcome and sent an update.
-7. **Closed** — the case is complete.
-8. **Reopened** — further work is required after resolution.
+Example: with 45 minutes remaining before a training session, confirm room / virtual access and IT setup, contact trainer and participants, and identify a fallback for missing materials. Do not imply the app actually sends the messages or reserves the room.
 
-A request should not silently disappear from the queue when it is waiting for someone else. Waiting states must remain visible in the backlog and reporting.
+### E. Post-activity review
 
-## 8. Priority and service targets
+- Mark activity completed or cancelled.
+- Record which actions were missed, simplified or used via fallback.
+- Capture a short internal learning note using fictional data.
+- Allow a playbook owner to propose an adjustment to a future template.
+- Do not score or rank individual HR coordinators.
 
-Use three simple illustrative priorities:
+## 6. Workflow and readiness model
 
-- **Standard**
-- **Important**
-- **Urgent**
+An activity has a planned start / due time and is instantiated from a playbook. Its actions have due offsets, owners, criticality and dependencies.
 
-The demo may use example response and resolution targets, but these must be labelled **illustrative service targets — not an actual company SLA**. The prototype must show whether a case is within target, approaching target or overdue, with the underlying due date visible. Do not imply that all requests have the same urgency or that a prototype target represents a legal deadline.
+Readiness should be rule-based and explainable:
 
-## 9. Core user journeys
+- **Ready:** all Essential actions due before start are complete, with no active blocker.
+- **Needs attention:** an Essential action is incomplete but is not yet past due, or its owner / prerequisite is missing.
+- **At risk:** an Essential action is overdue, blocked or waiting close to the activity start.
+- **Recovery mode:** the activity is within a configurable short time window and one or more Essential actions remain unresolved.
+- **Completed / Cancelled:** terminal activity states.
 
-### Employee journey
+Do not use weighted readiness scores or present a percentage as a guarantee that an activity will succeed. Every status must list the exact unresolved actions and the rule that triggered it.
 
-1. Employee opens the portal.
-2. Employee selects a request category and topic.
-3. The form displays only the relevant non-sensitive fields.
-4. Employee submits the request and receives a case reference.
-5. Employee checks the status and reads employee-visible updates.
-6. If HR asks for more information, the employee replies in the same case.
-7. Employee sees the resolution summary and closure status.
+The thresholds and lead times in the demo are illustrative, not company policy or legally mandated deadlines.
 
-### HR Operations journey
+## 7. Core user journeys
 
-1. HR opens the service desk queue.
-2. HR reviews new and overdue cases.
-3. HR triages a new request, checks completeness and assigns the correct queue and owner.
-4. HR sets or confirms the illustrative priority and service target.
-5. HR records internal work notes and sends employee-visible updates as appropriate.
-6. If an external or internal hand-off is required, HR moves the case to a visible waiting state.
-7. HR resolves and closes the case with an employee-visible outcome.
-8. HR reviews operations insights to identify recurring patterns.
+### Normal preparation journey
 
-## 10. Prototype success criteria
+1. HR Generalist opens the Operations Radar.
+2. HR selects an activity type, for example Training Session.
+3. HR sets the date / time, coordinator and owners.
+4. The playbook generates a timeline of actions with lead times and dependencies.
+5. The Radar highlights the next action and any missing owner.
+6. HR marks actions complete as preparations progress.
+7. The Activity Workspace explains readiness and outstanding steps.
+8. After the activity, HR records any deviations and useful learnings.
 
-The prototype is successful when a reviewer can:
+### Last-minute recovery journey
 
-- Submit a request through the Employee Portal and receive a reference number.
-- Find the request in the HR Service Desk without re-entering the data.
-- Assign the request to a queue and owner.
-- Change the case status and see the employee-facing view update.
-- Add an internal note and verify it is not shown to the employee.
-- Request information and receive an employee reply within the same case.
-- See waiting and overdue cases in the queue.
-- Understand every displayed operational KPI from its written definition.
-- Reset the application to its original synthetic demo state.
+1. HR opens a training activity with 45 minutes remaining.
+2. The system detects that essential actions remain incomplete.
+3. HR opens Rapid Recovery.
+4. The view groups remaining work by urgency and feasibility.
+5. HR follows the next action, contacts the relevant owner outside the prototype and records the result.
+6. If a planned step is no longer possible, HR selects an explicit fallback or defers it.
+7. The readiness explanation updates without hiding unresolved risks.
 
-These are test scenarios, not measured business outcomes.
+### Recurring activity journey
 
-## 11. Non-goals
+1. HR chooses a recurring activity template.
+2. HR sets the recurrence and responsible coordinator.
+3. The system creates dated instances with relative action deadlines.
+4. Each instance is tracked separately; completing one does not silently complete future instances.
+5. A post-activity note can inform a future template revision.
 
-- Production HR case management or a replacement for an HRIS.
-- Real authentication or access control.
-- Handling real payroll, benefits, health or personal case data.
-- Uploading identity, medical or contract documents.
-- Sending real email or notifications.
-- Making payroll calculations or employment-law interpretations.
-- Automatically approving employee requests.
-- AI classification, sentiment analysis or AI-generated HR decisions.
-- Predicting employee behaviour or rating employees.
-- Claims about shorter resolution times, lower workload or better employee satisfaction without user testing and real evidence.
+## 8. Prototype success criteria
 
-## 12. Privacy and responsible-use principles
+A reviewer should be able to:
 
-- Synthetic data only.
-- No real employee names, contact details, salary values, bank details, health data or actual HR case content.
-- No attachment upload.
-- No public free-text case examples containing personal data.
-- Clear distinction between employee-visible messages and internal HR notes.
-- Simulated employee/HR view is a demonstration switch, not authentication or access control.
-- No analytics or third-party calls in the prototype.
-- Any future production design would require a separate privacy, security, retention, access-control and processor assessment.
+- Create a training activity from a playbook in under one minute.
+- See the generated preparation actions with relative deadlines, owners and dependencies.
+- See the activity become At risk when an Essential action is blocked or overdue.
+- Open Rapid Recovery with 45 minutes remaining and understand what must happen first.
+- Choose a fallback for an action that can no longer be completed.
+- Verify that the readiness explanation names the exact unresolved actions.
+- Create a recurring activity and see separate dated instances.
+- Complete the activity and record one improvement note for the next run.
+- Reset all data to the original synthetic demo state.
 
-## 13. Positioning within HR Solutions Lab
+These are usability goals for the prototype, not measured productivity outcomes.
+
+## 9. Differentiation and market boundary
+
+Generic task-management and HR service-delivery platforms already provide tasks, queues, reminders, workflow automation and cross-team assignment. The Hub must not compete by reproducing those basic capabilities.
+
+Its proposed focus is narrower:
+- HR Generalist-led coordination of operational activities and cycles;
+- reusable HR-specific playbooks with relative lead times and prerequisites;
+- readiness explained through critical outstanding actions;
+- a Rapid Recovery view for late-running activities;
+- a lightweight post-activity learning loop that improves future playbooks.
+
+This is a product hypothesis to validate, not a claim of exclusive market uniqueness.
+
+## 10. Non-goals
+
+- Employee request intake or a ticket / case queue.
+- General-purpose task management or project management.
+- Full LMS, HRIS or employee lifecycle platform.
+- Real calendar, email, Teams, room-booking or IT integrations.
+- Automated notifications or external actions.
+- Authentication, real multi-user permissions or collaboration.
+- Real employee data, personal case records or sensitive information.
+- Payroll calculations, employment-law decisions or compliance approval.
+- AI-generated task prioritisation or autonomous execution.
+- Claims about hours saved, events rescued or improved service levels without measurement.
+
+## 11. Privacy and responsible use
+
+- Use synthetic people, activities and action notes only.
+- No real employee names, contact details, salary data or employee case information.
+- No medical, absence-reason, bank, tax, identity or immigration data.
+- No file uploads.
+- No email/calendar scraping or external data integrations.
+- No analytics or third-party data transfer in the prototype.
+- All owners are fictional names or generic stakeholder roles.
+- The app is a demonstration of operational coordination, not a source of employer policy or legal obligations.
+
+## 12. Positioning within HR Solutions Lab
 
 - **Smart Onboarding:** coordinates the new-hire journey from offer acceptance through Day 90.
-- **HR Operations Hub:** coordinates ongoing HR service requests after employees are onboarded.
+- **HR Operations Hub:** helps HR Generalists prepare and recover recurring and one-off HR operational activities.
 - **EU Mobility Navigator:** explores life-first destination discovery and bounded mobility orientation.
 
-This separation creates three complementary examples: employee lifecycle process design, ongoing HR service delivery and international mobility product thinking.
+The three projects demonstrate different aspects of HR process knowledge: employee lifecycle, ongoing operations and international mobility.
