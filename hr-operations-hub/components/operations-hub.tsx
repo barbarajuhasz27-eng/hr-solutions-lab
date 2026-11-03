@@ -22,7 +22,7 @@ import { useEffect, useMemo, useState } from "react";
 import { applyActionUpdate, getReadiness, getRecoveryPlan } from "@/lib/engine";
 import type { Activity, ActionInstance, ActivityStatus, View } from "@/lib/model";
 import { PLAYBOOKS, getPlaybook } from "@/lib/playbooks";
-import { createActivity, createSeedActivities, resetActivities } from "@/lib/seed";
+import { createActivity, resetActivities } from "@/lib/seed";
 import { clearActivities, loadActivities, saveActivities } from "@/lib/storage";
 
 function formatDate(date: Date, options: Intl.DateTimeFormatOptions = {}) {
@@ -239,7 +239,7 @@ export function OperationsHub() {
     });
   }
 
-  function useFallback(activity: Activity, action: ActionInstance) {
+  function applyFallback(activity: Activity, action: ActionInstance) {
     if (!action.fallback) return;
     updateAction(activity.id, action.id, {
       status: "done",
@@ -260,12 +260,12 @@ export function OperationsHub() {
   function createFromPlaybook(playbookId: string) {
     const playbook = getPlaybook(playbookId);
     if (!playbook || playbook.actions.length === 0) return;
-    const startsAt = new Date(Date.now() + 14 * 24 * 60 * 60_000);
+    const startsAt = new Date(now.getTime() + 14 * 24 * 60 * 60_000);
     const created = createActivity(
       playbookId,
       playbook.title,
       startsAt,
-      `activity-${Date.now()}`,
+      `activity-${activities.length + 1}-${now.getTime()}`,
       { location: "To be confirmed" },
     );
     setActivities((current) => [created, ...current]);
@@ -554,7 +554,7 @@ export function OperationsHub() {
                     activity={activeActivity}
                     now={now}
                     onToggle={() => toggleAction(activeActivity, action)}
-                    onFallback={action.fallback ? () => useFallback(activeActivity, action) : undefined}
+                    onFallback={action.fallback ? () => applyFallback(activeActivity, action) : undefined}
                   />
                 ))}
               </div>
@@ -627,7 +627,7 @@ export function OperationsHub() {
               </section>
             ))}
             <div className="notice">
-              Recovery suggestions are deterministic and based on the playbook's authored rules. The HR Generalist makes the decision and performs any communication or booking outside this prototype.
+              Recovery suggestions are deterministic and based on the playbook’s authored rules. The HR Generalist makes the decision and performs any communication or booking outside this prototype.
             </div>
           </>
         )}
