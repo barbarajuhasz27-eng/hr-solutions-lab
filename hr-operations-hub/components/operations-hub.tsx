@@ -6,7 +6,6 @@ import {
   CalendarDays,
   Check,
   CheckCircle2,
-  ChevronRight,
   Circle,
   Clock3,
   ClipboardCheck,
