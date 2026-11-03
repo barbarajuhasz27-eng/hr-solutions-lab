@@ -73,7 +73,7 @@ This template is an example for the prototype, not a universal standard.
 
 ## 5. Rapid Recovery logic
 
-Rapid Recovery is activated when the activity is within its configured recovery window and one or more Essential actions remain unresolved.
+Rapid Recovery is activated when the activity is within its configured recovery window and one or more Essential actions remain unresolved. Its Must do now group uses a cumulative time budget: the sum of estimated action minutes cannot exceed the minutes remaining before the activity starts.
 
 It should not simply sort every action by overdue time. It should take into account:
 
