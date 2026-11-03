@@ -9,110 +9,143 @@ Before coding, read:
 - `docs/PROCESS_MODEL.md`
 - `docs/DATA_AND_PRIVACY.md`
 
-The project is an Employee Services & HR Case Management prototype. It is **not** another onboarding application. Smart Onboarding already covers offer acceptance through the first 90 days. The Hub covers ongoing HR service requests and case resolution.
+This is an **HR Operations Readiness & Playbooks** prototype for HR Generalists and lean HR teams. It is not an employee ticket portal, generic project-management tool or Jira clone.
 
 ## Product outcome
 
-Deliver a polished, credible portfolio prototype with three connected surfaces:
+A reviewer should understand this core promise:
 
-1. Employee Portal
-2. HR Service Desk
-3. Operations Insights
+**Create an HR activity from a reusable playbook, see what must happen before it starts, and get a practical recovery plan when time is running out.**
 
-A reviewer must be able to follow one case from employee submission through triage, assignment, internal processing, employee update, resolution and closure.
+The lead scenario is a training session due to start in 45 minutes, with room, IT, trainer, participant and material tasks still outstanding.
+
+## Product scope
+
+Build four connected surfaces:
+
+1. Operations Radar
+2. Playbook Library
+3. Activity Workspace
+4. Rapid Recovery
+
+A small post-activity review completes the learning loop.
 
 ## Visual direction
 
-Use a restrained enterprise HR operations aesthetic:
+Use a restrained enterprise HR Operations aesthetic:
 
-- clear information hierarchy and readable typography;
-- calm neutral surfaces with one restrained accent colour;
-- compact but comfortable tables and queue rows;
-- status labels with text as well as colour;
-- strong distinction between employee-facing and HR-only information;
+- precise, understated and operationally credible for a DACH enterprise HR function;
+- readable typography and calm neutral surfaces;
+- date-first calendar / timeline presentation;
+- task dependency and readiness information that is immediately understandable;
+- visible distinction between Essential, Important and Optional actions;
 - responsive desktop and mobile layouts;
-- avoid a generic SaaS template look, excessive cards, gradients and decorative charts.
+- avoid generic SaaS dashboards, huge KPI cards, decorative charts and excessive gradients.
 
-The design should feel suitable for an Austrian or DACH enterprise HR function: precise, understated and operationally credible.
+The design should feel like an operational cockpit for a busy HR Generalist, not a ticketing system.
 
-## Required application features
+## Required surfaces and interactions
 
-### Shared shell and navigation
+### 1. Operations Radar
 
-- App name: HR Operations Hub.
-- Persistent navigation with Employee Portal, HR Service Desk and Operations Insights.
-- A clear Demo Mode indicator.
-- A role/view selector labelled as a simulated preview, not a login or security feature.
-- A Reset demo data action with confirmation.
+- Calendar / timeline of upcoming activities.
+- Sections for Today, Next 7 Days, At Risk and Overdue.
+- Each activity shows activity type, date/time, coordinator, readiness state and next critical action.
+- Quick-create from a playbook.
+- Create recurring instances from a recurrence pattern.
+- Filter by activity type, time and readiness.
 
-### Employee Portal
+### 2. Playbook Library
 
-- Overview of a small number of synthetic requests.
-- New request form with a controlled service category and topic.
-- Dynamic fields based on the selected topic; do not ask for sensitive personal details.
-- Submit creates a case with a reference number.
-- My Requests list with status, last updated time and reference.
-- Case detail timeline with employee-visible messages only.
-- Employee reply action when the case is Waiting for employee.
-- Visible reminder not to enter health, bank, tax, identity-document or other sensitive information.
+Seed at least five playbooks:
+- Training session
+- Employee information session
+- Performance review cycle launch
+- Recurring monthly HR deadline (generic; no payroll calculation)
+- Policy / process communication
 
-### HR Service Desk
+Each playbook has actions, relative lead times, default owner roles, criticality, estimated effort, dependencies and optional fallbacks. Allow the demo user to inspect and minimally edit a playbook.
 
-- Queue summary: open, unassigned, waiting for employee, waiting for another team, overdue.
-- Search and filters for status, category, queue, owner, priority and date/age.
-- Case detail with employee request, triage fields, service targets, activity and next action.
-- Assign queue and owner.
-- Change status through the defined lifecycle.
-- Request information from employee.
-- Add an internal note that never appears in employee view.
-- Send employee-visible updates as a separate action.
-- Resolve and close cases; allow reopening.
-- Show the illustrative SLA due date and explicitly label it as a demo target, not company policy.
+### 3. Activity Workspace
 
-### Operations Insights
+- Activity date/time and coordinator.
+- Generated action timeline.
+- Owners and unassigned actions.
+- Relative due time and overdue indicator.
+- Dependency visualization / clear blocked-by explanation.
+- Action statuses: Not started, In progress, Waiting, Done, Blocked, Skipped.
+- Readiness explanation that names each unresolved Essential action.
+- Duplicate activity or create another from the same playbook.
 
-- Incoming volume by category.
-- Open backlog by queue and status.
-- Overdue cases and unassigned cases.
-- Median resolution time for resolved requests.
-- Reopened rate with denominator and cohort definition.
-- Waiting-state breakdown.
-- Every metric must have a written definition, date range, population and synthetic-data disclaimer.
-- No composite score, employee ranking or team blame.
+### 4. Rapid Recovery — essential feature
 
-## Data and behaviour
+Provide a dedicated action when an activity is close to its start time and Essential actions remain unresolved.
 
-- Use typed TypeScript models.
-- Seed at least 12–16 fictional cases across all major categories, queues, statuses and priorities.
-- Include useful edge cases: unassigned case, waiting for employee, waiting for another team, overdue, resolved, reopened.
-- Use deterministic category-to-queue mapping which HR can override.
-- Use local browser storage only; no backend or external requests.
-- All seeded people and requests must be fictional and non-sensitive.
-- Do not include actual employer policies, legal advice or payroll calculations.
-- The Employee/HR view switch is only a simulated preview. Do not imply real access control.
-- Ensure internal notes are filtered out of the employee-facing view in application logic, not merely hidden with CSS.
+It must:
+- show time remaining;
+- group actions into Must do now, Can simplify, Can follow up later and Blocked / needs someone else;
+- respect dependencies;
+- present practical fallback options defined by the playbook;
+- let the HR Generalist record a decision and update action state;
+- state why each action was prioritised;
+- never claim to send messages, book rooms, configure IT or contact a person.
+
+Use a seeded training activity with **45 minutes remaining** as the first-run demonstration. The scenario should be understandable without additional explanation.
+
+### 5. Post-activity review
+
+- Complete or cancel an activity.
+- Record missed, simplified or fallback actions.
+- Add one short process learning note.
+- Let the user propose a playbook update for a later cycle.
+- No individual ratings or performance scoring.
+
+## Data and behavior
+
+- Typed TypeScript models for Activity, Playbook, Action and recurrence.
+- Seed 6–10 synthetic activities across upcoming, ready, at-risk, overdue and completed states.
+- Seed 5 playbooks as above.
+- Include one dramatic but realistic 45-minute training rescue case.
+- Include a recurring HR deadline and a performance-review cycle launch.
+- Calculate action due dates from activity start and relative lead times.
+- Derive readiness deterministically from Essential actions, status, due time and dependency state.
+- Recovery grouping must be deterministic and explained; do not use AI.
+- A user action is required to mark an action done or skipped.
+- Local browser storage only; no backend or external requests.
+- Reset-to-demo-data must restore the exact seeded scenario.
+- All people, organisations, event titles and activity notes must be fictional and non-sensitive.
+
+## Explicit boundaries
+
+Do NOT build:
+- employee request intake;
+- ticket queues or case-management lifecycle;
+- generic to-do lists or Jira-like project boards;
+- HRIS or LMS functionality;
+- email, calendar, Teams, room-booking, payroll or IT integrations;
+- automatic reminders or real notifications;
+- authentication or production role permissions;
+- file uploads or real employee data;
+- payroll, legal or compliance decisions;
+- AI triage or autonomous actions.
 
 ## Quality expectations
 
-- TypeScript strictness, component separation and accessible controls.
-- Unit tests for status transitions, queue mapping, SLA state, KPI calculations and employee/internal activity visibility.
-- Tests for request submission, assignment, waiting-state transitions, resolution and reopening.
-- Include reset-to-demo-data.
-- Handle empty states and invalid form states.
-- Avoid fake live notifications or integrations.
+- TypeScript strictness and modular domain logic.
+- Unit tests for due-date generation, recurrence, dependencies, readiness calculation and recovery grouping.
+- Tests for late, blocked, skipped and fallback action paths.
+- Verify that the 45-minute training case produces a coherent, explainable recovery plan.
+- Include empty states, invalid input handling, accessibility and mobile layouts.
+- Do not claim business impact without user testing.
 
 ## Suggested build sequence
 
-1. Inspect repository conventions and create the isolated app skeleton.
-2. Implement domain types, synthetic data, workflow transitions and KPI calculations.
-3. Implement Employee Portal request submission and tracking.
-4. Implement HR Service Desk queue and case workspace.
-5. Implement Operations Insights.
-6. Add responsive polish, accessibility and automated tests.
-7. Update README and screenshots plan with what actually exists.
+1. Inspect repository conventions and create the isolated application skeleton.
+2. Implement domain types, five playbooks, synthetic activities and deterministic date / dependency logic.
+3. Build Operations Radar and Playbook Library.
+4. Build Activity Workspace and readiness explanation.
+5. Build Rapid Recovery and the 45-minute training scenario.
+6. Add post-activity review, responsive polish and automated tests.
+7. Update project documentation and add authentic screenshots only after capture.
 
-## Explicit non-goals
-
-No authentication, no production permissions, no backend, no email/Teams/HRIS/payroll integrations, no file uploads, no real employee data, no AI triage, no legal or payroll decisions, no production SLA claims.
-
-Do not mark any feature complete until the implementation and tests support that claim. Before finishing, report changed files, features implemented, test results, typecheck/build results and all limitations honestly.
+Before finishing, report changed files, implemented features, test results, typecheck/build results and limitations honestly. Do not mark any feature complete unless implementation and tests support it.
