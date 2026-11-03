@@ -1,6 +1,6 @@
 # HR Operations Hub — Consolidated Product & Implementation Specification
 
-**Version:** 1.0 (for approval) · **Date:** 03.11.2026 · **Base:** `main` @ `107ce78`
+**Version:** 1.1 (for approval) · **Date:** 03.11.2026 · **Base:** `main` @ `107ce78`
 **Status:** Specification only. No application code changes until this document is approved.
 
 This document consolidates the Phase 1 redesign proposal and the decisions taken on it. Where it conflicts with `PRODUCT_BRIEF.md`, `PROCESS_MODEL.md` or `DATA_AND_PRIVACY.md`, this document wins. Those documents are updated in the final implementation PR. The privacy boundaries in `DATA_AND_PRIVACY.md` remain in force and are extended in section 10.
@@ -17,7 +17,11 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D4 | English UI with DACH conventions: 24-hour time, `DD.MM.YYYY`, ISO calendar week ("KW"), time zone Europe/Vienna. Built so that localisation can follow. | Approved |
 | D5 | **HR Systems & Digital Operations** added as an explicit operational area. IT coordination stays a cross-cutting dimension. | Requirement A |
 | D6 | Positioning: **HR Operations Management Workspace for Lean HR Teams**. The calendar is one view, not the product. | Requirement B |
-| D7 | The schedule engine is working-day aware from the MVP onward, with **configurable weekend days, public holidays and company non-working days**. A maintained Austrian holiday database comes later. | Requirement C |
+| D7 | The schedule engine is working-day aware from the MVP onward, with **configurable working week, statutory public holidays and company closures**. A maintained Austrian holiday database comes later. | Requirement C |
+| D8 | Statutory public holidays and company closures are **separate kinds** of entry. 24.12. and 31.12. are never treated as Austrian public holidays, but either can be configured as a company closure. | Review of v1.0 |
+| D9 | The **working week, daily working hours, public holidays and company closures are all configurable**. Nothing is hard-coded. Working-day calculations (dates) and working-hour calculations (time budgets) are separate. | Review of v1.0 |
+| D10 | Working-day counting conventions are defined precisely (6.2a) and pinned by expected-date tests. | Review of v1.0 |
+| D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. | Review of v1.0 |
 
 ---
 
@@ -63,7 +67,7 @@ Top bar (48 px), left to right: product mark · five sections · exception strip
 | Section | Route | Purpose |
 |---|---|---|
 | Today | `/` (alias `/today`) | Daily command view: agenda from overdue to end of week, week grid, decisions needed, next cut-offs, active cover arrangements. |
-| Calendar | `/calendar` | All occurrences over time: month view and 13-week cut-off timeline. Generated and projected occurrences. Working-day calendar settings. |
+| Calendar | `/calendar` | All occurrences over time: month view and 13-week cut-off timeline. Generated and projected occurrences. Working-time settings (working week, hours, public holidays, company closures). |
 | Portfolio | `/portfolio` | All operations: area, cadence, owner and backup, next occurrence, history. |
 | — Operation detail | `/portfolio/[operationId]` | Definition, schedule rule with preview, ownership, playbook version, occurrence history. Edit schedule and ownership. |
 | People | `/people` | Responsibilities per person and counterparty, unavailability, cover, unassigned tasks. |
@@ -254,10 +258,20 @@ interface HistoryEvent {
   detail: Record<string, string | number | boolean>; // structured, rendered via the message catalogue
 }
 
+type ISOWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;      // 1 = Monday
+
 interface WorkCalendar {
   timeZone: "Europe/Vienna";
-  weekendDays: (1 | 2 | 3 | 4 | 5 | 6 | 7)[];          // ISO weekdays, default [6, 7]
-  holidays: { date: ISODate; name: string; kind: "public-holiday" | "company-closure" }[];
+  workingWeek: ISOWeekday[];                          // default [1, 2, 3, 4, 5]
+  workingHours: Partial<Record<ISOWeekday, { start: string; end: string }>>;
+                                                      // "HH:mm" local, one span per working weekday,
+                                                      // default 08:00–17:00 Mon–Fri (configurable)
+  publicHolidays: {
+    date: ISODate; name: string;
+    source: string;                                   // e.g. "ARG § 7 Abs. 2"
+    verified: boolean;                                // false until someone has checked it against the source
+  }[];
+  companyClosures: { date: ISODate; name: string }[]; // company-specific full-day non-working days
   updatedAt: ISODateTime;
 }
 ```
@@ -341,17 +355,67 @@ Each occurrence shows exactly one "Next" line, derived as follows:
 
 ### 6.1 Working days
 
-A **working day** is a calendar date in Europe/Vienna that is not a configured weekend day and not in `holidays` (public holiday or company closure).
+A **working day** is a calendar date in Europe/Vienna that:
 
-- The calendar is edited in **Calendar → Working days**: weekend days (default Saturday and Sunday), plus a list of dated public holidays and company closures with names.
-- MVP seed data contains Austrian public holidays for 2026 and 2027, entered by hand and labelled "entered manually, please verify". It also contains two example company closures (24.12. and 31.12.), clearly marked as company-specific.
-- When an occurrence's generation horizon reaches a year with **no holiday entries**, the Hub shows a calendar warning ("No holidays configured for 2028; working-day deadlines may be wrong"). The warning shows on Calendar and on each affected occurrence.
+- falls on a weekday in `workingWeek`,
+- is not in `publicHolidays`, and
+- is not in `companyClosures`.
 
-Seeded Austrian public holidays (to verify in review):
+**Three separate configuration layers.** All are edited in **Calendar → Working time**.
 
-| 2026 | 2027 |
-|---|---|
-| 01.01. New Year · 06.01. Epiphany · 06.04. Easter Monday · 01.05. Labour Day · 14.05. Ascension · 25.05. Whit Monday · 04.06. Corpus Christi · 15.08. Assumption · 26.10. National Day · 01.11. All Saints · 08.12. Immaculate Conception · 25.12. Christmas · 26.12. St Stephen's | 01.01. · 06.01. · 29.03. Easter Monday · 01.05. · 06.05. Ascension · 17.05. Whit Monday · 27.05. Corpus Christi · 15.08. · 26.10. · 01.11. · 08.12. · 25.12. · 26.12. |
+| Layer | What it is | Default | Notes |
+|---|---|---|---|
+| Working week | Weekdays on which the team works | Mon–Fri | Any combination of weekdays |
+| Statutory public holidays | Holidays defined by law, each with a source | Austrian list below | Shown as "Public holiday" |
+| Company closures | Company-specific full-day non-working days | none | Shown as "Company closure". The Calendar offers 24.12. and 31.12. as one-click suggestions, but does not pre-select them |
+
+**24.12. and 31.12. are not statutory public holidays in Austria.** They are not in the § 7 Abs. 2 ARG list. Many organisations still close on these days, or close in the afternoon under a collective agreement or company practice. The Hub therefore lets each of them be configured independently as a company closure. Half-day closures are not modelled in the MVP. A company that closes in the afternoon either enters a full closure or leaves the day as a working day.
+
+**Statutory list and source.** The 13 Austrian public holidays are defined in **§ 7 Abs. 2 Arbeitsruhegesetz (ARG), BGBl. Nr. 144/1983**. The official consolidated text is in the Rechtsinformationssystem des Bundes (RIS):
+<https://www.ris.bka.gv.at/GeltendeFassung.wxe?Abfrage=Bundesnormen&Gesetzesnummer=10008541>
+
+The law lists nine fixed dates and four movable feasts that depend on Easter. It does not publish calendar dates per year. The dates below were derived from Easter Sunday (05.04.2026 and 28.03.2027) and entered by hand:
+
+| Holiday (ARG § 7 Abs. 2) | Rule | 2026 | 2027 |
+|---|---|---|---|
+| Neujahr (New Year) | fixed | Thu 01.01. | Fri 01.01. |
+| Heilige Drei Könige (Epiphany) | fixed | Tue 06.01. | Wed 06.01. |
+| Ostermontag (Easter Monday) | Easter + 1 | Mon 06.04. | Mon 29.03. |
+| Staatsfeiertag (Labour Day) | fixed | Fri 01.05. | Sat 01.05. |
+| Christi Himmelfahrt (Ascension) | Easter + 39 | Thu 14.05. | Thu 06.05. |
+| Pfingstmontag (Whit Monday) | Easter + 50 | Mon 25.05. | Mon 17.05. |
+| Fronleichnam (Corpus Christi) | Easter + 60 | Thu 04.06. | Thu 27.05. |
+| Mariä Himmelfahrt (Assumption) | fixed | Sat 15.08. | Sun 15.08. |
+| Nationalfeiertag (National Day) | fixed | Mon 26.10. | Tue 26.10. |
+| Allerheiligen (All Saints) | fixed | Sun 01.11. | Mon 01.11. |
+| Mariä Empfängnis (Immaculate Conception) | fixed | Tue 08.12. | Wed 08.12. |
+| Christtag (Christmas Day) | fixed | Fri 25.12. | Sat 25.12. |
+| Stefanitag (St Stephen's Day) | fixed | Sat 26.12. | Sun 26.12. |
+
+Not included: Good Friday (no longer a general holiday) and the "persönlicher Feiertag" under § 7a ARG. The latter is an individual leave entitlement, not a non-working day for the team.
+
+**Manual-verification warning.**
+
+- Every seeded entry starts with `verified: false`.
+- While any public holiday in the generation horizon is unverified, Calendar shows a persistent banner: "Public holidays for 2026–2027 were entered manually and have not been checked against the official source. Deadlines that depend on them may be wrong."
+- The banner links to the RIS source. Affected occurrences show a small "unverified calendar" marker.
+- *Mark as verified* (per year) records who confirmed the list and when, and removes the warning for that year. The warning is not removed in code until you have checked the list.
+
+**Missing years.** When an occurrence's generation horizon reaches a year with **no public-holiday entries**, the Hub shows a stronger warning: "No public holidays configured for 2028; working-day deadlines may be wrong". It appears on Calendar and on each affected occurrence.
+
+### 6.1a Working hours
+
+Working hours are a **separate layer** from working days, with their own module and tests:
+
+| Module | Answers | Used by | Never uses |
+|---|---|---|---|
+| `lib/calendar/working-days.ts` | Is this date a working day? Which date is n working days before or after? | Schedule anchors (6.2), task due dates (6.3), working-day windows (7) | Times of day, working hours |
+| `lib/calendar/working-hours.ts` | How many working minutes lie between two instants? | Recovery effort budget and "time left" countdowns (7, 9.6) | It asks `working-days` whether a date is working, but does not define it |
+
+- Working hours are configured per working weekday (`workingHours`). The default is 08:00–17:00, Monday to Friday, with no break deduction. It can be changed in Calendar → Working time.
+- Changing working hours **never moves a deadline**. It only changes the reported time budget and the recovery grouping.
+- A due time outside working hours is allowed. The 12:00 payroll cut-off is a date-and-time fact, not a working-hours calculation.
+- If a working weekday has no hours configured, it contributes zero working minutes, and the settings panel flags it.
 
 ### 6.2 Anchor calculation
 
@@ -360,22 +424,75 @@ For a recurring operation and a period:
 1. Determine the nominal **local date** from the rule:
    - `dayOfMonth(d)`: day `d` of the month, clamped to the last day (31 → 30.11.).
    - `nthWorkingDay(n)`: the n-th working day of the month. Validation: n ≤ number of working days. Otherwise the occurrence is flagged and not generated.
-   - `workingDaysBeforeMonthEnd(n)`: last working day of the month, then n working days earlier.
+   - `workingDaysBeforeMonthEnd(n)`: last working day of the month, then n working days earlier (precise convention in 6.2a).
    - `weekday(w)`: weekday `w` of the ISO week.
    - `monthAndDay(m, d)`: month m (of quarter or year), day d, clamped.
 2. For date-based rules (`dayOfMonth`, `weekday`, `monthAndDay`), apply `weekendShift` if the date is not a working day. Working-day rules already land on working days.
 3. Combine with `schedule.time` in Europe/Vienna and convert to UTC (DST-correct).
 
-**Reference results (become unit tests):**
+### 6.2a Counting conventions (binding)
 
-| Operation | Rule | Period | Calendar | Anchor |
+All counting is on working days as defined in 6.1. Calendar days that are not working days are skipped and never counted.
+
+| Expression | Convention | In words |
+|---|---|---|
+| `nthWorkingDay(n)` | Count forward from the 1st of the month. The first working day of the month is **number 1**. | "3rd working day" = the third working day of the month. |
+| `workingDaysBeforeMonthEnd(n)` | Let *L* be the last working day of the month. *L* is **position 0 and is not counted**. Step back n working days from *L*. | "5 working days before month end" = the working day with **exactly 5 working days of the same month after it**. Equivalently, the 6th-last working day of the month. |
+| Task offset `−n workingDays` | The anchor date is **position 0 and is not counted**. Step back n working days. | "−1 WD" = the previous working day. "0 WD" = the anchor date itself. |
+| Task offset `+n workingDays` | Same, forward. | "+2 WD" = the second working day after the anchor date. |
+| Anchor on a non-working day (manual move only) | Still position 0. −1 WD is the last working day strictly before it. | — |
+| Working-day windows (7) | "Within 2 working days" means: the current local date is at most 2 working days before the anchor date, counted with the same convention. | — |
+
+Times of day do not affect any of these counts. The due time is applied after the date has been determined.
+
+**Worked example, November 2026 (AT 2026, Mon–Fri week, no closures).** The last working day is Mon 30.11. (position 0). Counting back: Fri 27. (1), Thu 26. (2), Wed 25. (3), Tue 24. (4), **Mon 23.** (5). Anchor: **Mon 23.11.2026 12:00**.
+
+**Worked example, December 2026.** Non-working days in all variants: Sat/Sun, Fri 25.12., Sat 26.12. (public holidays). The company-closure configuration changes the result:
+
+| Scenario | Last working day *L* (position 0) | Counting back 1…5 | Anchor |
+|---|---|---|---|
+| D1 · no company closures | Thu 31.12. | Wed 30. · Tue 29. · Mon 28. · Thu 24. · **Wed 23.** | **Wed 23.12.2026 12:00** |
+| D2 · closures 24.12. **and** 31.12. | Wed 30.12. | Tue 29. · Mon 28. · Wed 23. · Tue 22. · **Mon 21.** | **Mon 21.12.2026 12:00** |
+| D3 · closure 24.12. only | Thu 31.12. | Wed 30. · Tue 29. · Mon 28. · Wed 23. · **Tue 22.** | **Tue 22.12.2026 12:00** |
+| D4 · closure 31.12. only | Wed 30.12. | Tue 29. · Mon 28. · Thu 24. · Wed 23. · **Tue 22.** | **Tue 22.12.2026 12:00** |
+
+### 6.2b Reference results (become unit tests in M2)
+
+Each row is an expected-date test. The calendar is AT public holidays with a Mon–Fri working week unless stated.
+
+| # | Rule | Period | Company closures | Expected |
 |---|---|---|---|---|
-| Payroll input cut-off | workingDaysBeforeMonthEnd(5), 12:00 | 11/2026 | AT 2026 | Mon **23.11.2026** 12:00 |
-| Payroll input cut-off | same | 12/2026 | AT 2026 *with* closures 24.12., 31.12. | Mon **21.12.2026** 12:00 |
-| Payroll input cut-off | same | 12/2026 | AT 2026 *without* closures | Wed **23.12.2026** 12:00 |
-| HR report delivery | nthWorkingDay(3), anchorPeriodOffset 1, 10:00 | 10/2026 | AT 2026 | Wed **04.11.2026** 10:00 |
-| HR report delivery | same | 12/2026 | AT 2027 (01.01., 06.01. off) | Thu **07.01.2027** 10:00 |
-| Any | dayOfMonth(31) | 11/2026 | — | 30.11.2026 (clamped), then shift rules |
+| T1 | workingDaysBeforeMonthEnd(5), 12:00 | 11/2026 | none | Mon **23.11.2026** 12:00 |
+| T2 | same | 12/2026 | none (D1) | Wed **23.12.2026** 12:00 |
+| T3 | same | 12/2026 | 24.12. + 31.12. (D2) | Mon **21.12.2026** 12:00 |
+| T4 | same | 12/2026 | 24.12. only (D3) | Tue **22.12.2026** 12:00 |
+| T5 | same | 12/2026 | 31.12. only (D4) | Tue **22.12.2026** 12:00 |
+| T6 | nthWorkingDay(3), anchorPeriodOffset 1, 10:00 | 10/2026 | none | Wed **04.11.2026** 10:00 (01.11. is a Sunday and a holiday; Mon 02. = 1, Tue 03. = 2, Wed 04. = 3) |
+| T7 | same | 12/2026 | none | Thu **07.01.2027** 10:00 (Fri 01.01. and Wed 06.01. are holidays; Mon 04. = 1, Tue 05. = 2, Thu 07. = 3) |
+| T8 | same | 12/2026 | 31.12. only | Thu **07.01.2027** 10:00 (a December closure does not affect January) |
+| T9 | dayOfMonth(31), next-working-day shift | 11/2026 | none | Mon 30.11.2026 (clamped, already a working day) |
+| T10 | dayOfMonth(15), previous-working-day shift | 08/2026 | none | Fri 14.08.2026 (15.08. is a Saturday and a holiday) |
+
+Task due-date tests (6.3) for the payroll anchor:
+
+| # | Anchor | Closures | Offset | Expected date |
+|---|---|---|---|---|
+| T11 | Mon 23.11.2026 | none | −6 WD | Fri 13.11.2026 |
+| T12 | Mon 23.11.2026 | none | 0 WD | Mon 23.11.2026 |
+| T13 | Mon 21.12.2026 (D2) | 24.12. + 31.12. | −2 WD | Thu 17.12.2026 |
+| T14 | Mon 21.12.2026 (D2) | 24.12. + 31.12. | +2 WD | Wed 23.12.2026 |
+| T15 | Mon 21.12.2026 (D2) | 24.12. + 31.12. | +4 WD | Tue 29.12.2026 |
+| T16 | Wed 23.12.2026 (D1) | none | +2 WD | Mon 28.12.2026 |
+| T17 | Wed 23.12.2026 (D1) | none | +4 WD | Wed 30.12.2026 |
+
+Working-hour tests (6.1a, separate test file):
+
+| # | From → to | Working hours | Expected working minutes |
+|---|---|---|---|
+| T18 | Fri 18.12.2026 16:00 → Mon 21.12.2026 12:00 | 08:00–17:00 Mon–Fri | 60 + 240 = **300** |
+| T19 | same | 07:00–15:30 Mon–Fri | 0 + 300 = **300**, because Friday 16:00 is already outside hours |
+| T20 | Wed 23.12.2026 09:00 → Mon 28.12.2026 12:00, closure 24.12. | 08:00–17:00 | 480 + 240 = **720** |
+| T21 | any change to working hours | — | anchors and task due dates in T1–T17 are unchanged |
 
 ### 6.3 Task due dates
 
@@ -416,7 +533,7 @@ A schedule change (rule, time, interval, weekend shift) creates a `ScheduleVersi
 
 ### 6.7 Changing the work calendar
 
-When holidays or weekend days change:
+When the working week, public holidays or company closures change (working hours do not affect dates, see 6.1a):
 
 - Not-started generated occurrences are recalculated.
 - Started occurrences whose rule would now give a different anchor get `calendarDrift` set and show "Calendar changed: rule now gives DD.MM.YYYY". *Apply* moves the anchor (logged `calendar-drift-applied`), *Keep* clears the drift flag.
@@ -451,14 +568,14 @@ The current, tested rules are kept and applied per occurrence, with three genera
 
 | Group | Rule | Change from today |
 |---|---|---|
-| Must do now | Essential, unblocked, fits the remaining time budget | Budget is effort minutes. For deadline playbooks the time left is measured in working hours (08:00–17:00 local on working days) until the anchor. |
+| Must do now | Essential, unblocked, fits the remaining time budget | Budget is effort minutes. For deadline playbooks the time left is the number of working minutes until the anchor, calculated by `working-hours` from the configured working hours (6.1a). |
 | Can simplify | Essential that does not fit and has a fallback; important with a fallback | — |
 | Needs someone else | Waiting / blocked holds, open prerequisites, essential without fallback that does not fit, effective responsible unavailable | Adds the unavailable case, with "Hand over" and "Reassign" actions |
 | After the anchor | Optional tasks, important tasks without fallback, and tasks with a positive offset (e.g. post-payroll check) | Renamed from "Can follow up later". Includes post-anchor tasks. |
 
 Every recovery action (fallback, reassign, hand over, postpone past anchor, escalation note) writes a `recovery-decision` history event shown in the **decision log**. "Note escalation" records text only. Nothing is sent.
 
-> Working hours 08:00–17:00 are an assumption for the effort budget only. Configurable working hours are excluded from the MVP.
+> Working hours are only used for the effort budget and the countdown. Whether an occurrence is in its recovery or attention window is decided in working **days**, so changing working hours never changes readiness status or deadlines. It can only move tasks between "Must do now" and "Can simplify". Event playbooks (Training Session) use plain elapsed minutes, not working hours.
 
 ---
 
@@ -573,7 +690,13 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 - Toggle: **Timeline** (default) · **Month**.
 - **Timeline:** 13 weeks, KW header, one row per operation: lead-time bar ending in an anchor diamond. Generated = solid, projected = hatched, moved = diamond with a ghost marker at the original date, skipped = dashed, overdue = pinned to a "carried over" column at the left.
 - **Month:** grid with anchors and holidays (named) per day.
-- **Working days** panel (button in header): weekend days, holiday list by year with add/edit/remove, missing-year warning.
+- **Working time** panel (button in header), with four separate sections:
+  1. Working week: weekday toggles.
+  2. Working hours: start and end per working weekday.
+  3. Public holidays: by year, with source, verification status and *Mark year as verified*.
+  4. Company closures: add, edit and remove, with suggestions for 24.12. and 31.12.
+
+  The panel also shows the unverified and missing-year warnings, and a preview of how the next three anchors per operation change before saving.
 - Occurrence actions from the popover: Open · Move · Skip.
 
 ### 9.4 Playbooks (`/playbooks`, `/playbooks/[id]`)
@@ -610,12 +733,12 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 
 1. New identity and navigation (sections 3, 8). Dark theme for the workspace, recovery mode always dark.
 2. Domain model v3, reducer with history, migration (sections 4, 11).
-3. Work calendar with weekends, holidays and closures, plus missing-year warning (6.1).
+3. Configurable working time: working week, daily working hours, statutory public holidays (with source and verification status) and company closures, plus unverified and missing-year warnings (6.1, 6.1a).
 4. Schedule engine: one-off, weekly, monthly, quarterly, annual. Rules `dayOfMonth`, `nthWorkingDay`, `workingDaysBeforeMonthEnd`, `weekday`, `monthAndDay`. Weekend shift, generation horizon, projection, activation (6.2–6.4).
 5. Move, skip, close, schedule versions, calendar drift (6.5–6.7).
 6. Readiness and recovery on occurrences with per-playbook windows and reason codes (7).
 7. Owner, backup, responsible, contributors, next actor, unavailability, coverage (5).
-8. Three playbooks, fully authored (Appendix A), with HR review sign-off.
+8. Three playbooks (Appendix A). Payroll and reporting are implemented only after your HR review of the draft assumptions.
 9. Screens: Today, Portfolio and operation detail, Calendar with working-day settings, Playbooks with both "use" flows, Occurrence with close-out, Recovery mode, People.
 10. Synthetic seed: 4 HR people, 9 counterparties, the three operations with plausible history (Appendix B).
 11. Demo banner, reset demo, stale-demo handling adapted to recurrence (11.4).
@@ -626,7 +749,8 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 - Playbook editing, custom task creation outside playbooks, playbook version management UI.
 - Approver role and approval states.
 - Custom recurrence beyond the five rules (e.g. "every second Tuesday", RRULE import).
-- A maintained or automatically updated holiday database, regional holidays and configurable working hours.
+- A maintained or automatically updated holiday database, regional or church holidays, and holiday calculation from Easter (dates are entered, not computed).
+- Half-day closures, split working hours, breaks, shift patterns and per-person working time.
 - Workload capacity in hours, bottleneck analytics, "consistently late" insights, trend charts and percentages.
 - Notifications, reminders, email, calendar, Teams, HRIS, payroll provider or IT integrations.
 - Authentication, multiple real users, permissions, backend, database, export or import.
@@ -695,12 +819,12 @@ Each milestone is **one pull request** from its own branch off the latest `main`
 | **S** (this document) | `docs/OPERATIONS_SPEC.md`, README link | You approve the specification. |
 | **M0 · Identity and shell** | Tokens, fonts via `next/font`, top bar, exception strip, routes (`/`, `/calendar`, `/portfolio`, `/people`, `/playbooks`, `/o/[id]`, `/o/[id]/recovery`). The current activity, playbook and recovery views ported to the new shell. Calendar, Portfolio and People show honest "coming in M6/M7/M9" states. | All 51 current tests pass unchanged. Every existing feature works at its new URL. No left sidebar, cream, teal or Inter. Light and dark workspace, recovery always dark. Browser review by you. |
 | **M1 · Domain model v3 and store** | Types, reducer actions with history events, v3 storage, migration (11), `lib/format.ts`, message catalogue. | Migration tests (11.5) pass. Every reducer action has a test asserting its history event. Format tests: `DD.MM.YYYY`, 24 h, KW. |
-| **M2 · Work calendar and schedule engine** | Working-day arithmetic, all five rules, weekend shift, Europe/Vienna conversion, generation horizon, projection, activation, period keys. | All reference results in 6.2 and 6.8 pass, including December with and without closures, January with Epiphany, KW 53, both DST dates. Generation is idempotent. Pausing and end dates respected. |
-| **M3 · Readiness and recovery on occurrences** | Engine anchored on `anchorAt`, offset units, per-playbook windows, working-hour budget, reason codes, new codes. | Training scenario behaves exactly as today (ported tests). Payroll occurrence enters Recovery 2 working days before cut-off, not over a weekend early. Recovery groups include post-anchor tasks in "After the anchor". |
+| **M2 · Working time and schedule engine** | `working-days` and `working-hours` as separate modules. Working week, working hours, public holidays (with source and `verified`), company closures. All five rules with the 6.2a counting conventions, weekend shift, Europe/Vienna conversion, generation horizon, projection, activation, period keys. | Expected-date tests T1–T17 (6.2b) pass, including all four December closure scenarios. Working-hour tests T18–T21 pass. KW and DST tests (6.8) pass. 24.12. and 31.12. are not in the public-holiday seed. The `working-days` module does not import `working-hours`. Generation is idempotent. Pausing and end dates are respected. **The holiday seed stays `verified: false` until you have checked it against RIS.** |
+| **M3 · Readiness and recovery on occurrences** | Engine anchored on `anchorAt`, offset units, per-playbook windows, working-minute budget, reason codes, new codes. | Training scenario behaves exactly as today (ported tests). Payroll occurrence enters Recovery 2 working days before cut-off, not early over a weekend or holiday. Changing working hours changes the budget but not readiness status (tested). Recovery groups include post-anchor tasks in "After the anchor". |
 | **M4 · Responsibility** | People, counterparties, owner/backup validation, effective responsible, next actor, unavailability, coverage, `owner-unavailable`. | Next actor correct for: plain, waiting, blocked, covered, all-prerequisites-open and nothing-open cases. Removing coverage restores assignments. Essential tasks cannot be unassigned. No absence reason field exists. |
-| **M5 · Playbooks and "use" flows** | Author payroll and reporting playbooks (Appendix A), Training Session v2. Library, detail, one-off and recurring creation flows with anchor preview. | You sign off both new task lists as realistic. Created operations generate correct occurrences. Optional tasks can be removed, essential cannot. |
+| **M5 · Playbooks and "use" flows** | **Precondition: your written HR review of Appendix A.2 and A.3, with any changes incorporated into this spec first.** Then author payroll and reporting playbooks as reviewed, Training Session v2, library, detail, one-off and recurring creation flows with anchor preview. | Implemented task lists match the reviewed Appendix A exactly. Created operations generate correct occurrences. Optional tasks can be removed, essential cannot. |
 | **M6 · Today and Portfolio** | Agenda, week grid, footer band, filters. Portfolio table, DotHistory, operation detail with ScheduleEditor (versions, preview) and ownership editor. | Every count in the exception strip is a working filter. Schedule edit regenerates only not-started occurrences (tested). Dot history matches closed occurrence outcomes. |
-| **M7 · Calendar** | Timeline and month views, projection drawing, move and skip, carried-over column, working-days settings, calendar drift, missing-year warning. | Generated, projected, moved, skipped and carried-over occurrences are visually distinct. Holiday change recalculates not-started occurrences and flags started ones (tested). |
+| **M7 · Calendar** | Timeline and month views, projection drawing, move and skip, carried-over column, working-time settings, calendar drift, missing-year warning. | Generated, projected, moved, skipped and carried-over occurrences are visually distinct. Holiday change recalculates not-started occurrences and flags started ones (tested). |
 | **M8 · Occurrence, Recovery mode, close-out** | Occurrence workspace, task timeline and table, history log, recovery board with decision log, close dialog and summary. | One full payroll month can be executed, recovered and closed in the demo. Close outcomes follow 6.5. Closed occurrences are read-only. Every recovery action appears in the decision log. |
 | **M9 · People, responsive and accessibility, docs** | People view, cover dialog, unassigned queue. Responsive pass at the four breakpoints. Accessibility pass (keyboard, focus, contrast, labels). Update README, PRODUCT_BRIEF, PROCESS_MODEL, DATA_AND_PRIVACY. | Browser review on desktop, tablet and phone in both themes. Text contrast ≥ 4.5:1. All actions keyboard-operable. Docs describe only implemented behaviour. |
 
@@ -710,16 +834,35 @@ Each milestone is **one pull request** from its own branch off the latest `main`
 
 ## Appendix A · MVP playbooks
 
-Offsets are relative to the anchor. These are illustrative process designs for a synthetic organisation, not universal standards. The two new playbooks need your HR review in M5.
+Offsets are relative to the anchor and follow the counting conventions in 6.2a.
+
+> **DRAFT — HR REVIEW REQUIRED BEFORE IMPLEMENTATION.**
+> A.2 and A.3 are draft assumptions for a synthetic organisation. They are not validated processes or universal standards. Everything in these tables is an assumption: anchor rule, lead time, windows, task list, offsets, owners, contributors, criticality, effort, dependencies and fallbacks. That applies especially to the columns marked †. Nothing in A.2 or A.3 is implemented until you have reviewed it and the reviewed version has been written back into this document. Until then, M0–M4 use only the Training Session playbook and neutral test fixtures.
+
+Review status:
+
+| Playbook | Status | Reviewer |
+|---|---|---|
+| A.1 Training Session | Existing and in use; mapping only | — |
+| A.2 Monthly Payroll Input Coordination | **Draft, not reviewed** | You (HR) |
+| A.3 Monthly HR Reporting | **Draft, not reviewed** | You (HR) |
 
 ### A.1 Training Session (v2, event-start)
 Anchor "Training starts". Lead time 7 days. Attention 24 h, recovery 60 min. The seven existing tasks are unchanged (trainer, participants, room, IT setup, reminder, materials, attendance follow-up), with offsets converted to minutes and responsibilities mapped as in 11.3.
 
-### A.2 Monthly Payroll Input Coordination (v1, deadline)
-Area PC. Anchor "Provider cut-off". Rule `workingDaysBeforeMonthEnd(5)`, 12:00. Lead time 15 working days. Attention 1 working day, recovery 2 working days.
-Completion criteria: input file handed over by cut-off; all collected changes reconciled; corrections for next period logged.
+### A.2 Monthly Payroll Input Coordination (v1, deadline) — DRAFT
 
-| # | Task | Offset | Responsible | Contributor | Crit. | Effort | Depends on | Fallback |
+Area PC. All values below are draft assumptions:
+
+| Parameter | Draft assumption | To confirm |
+|---|---|---|
+| Anchor | "Provider cut-off", rule `workingDaysBeforeMonthEnd(5)`, 12:00 | Real cut-off rule and time agreed with the provider |
+| Lead time | 15 working days | When the cycle should start |
+| Attention / recovery window | 1 / 2 working days | When the team needs warning |
+| Owner / backup | HR Generalist / HR Operations Specialist | Who is accountable and who covers |
+| Completion criteria | Input file handed over by cut-off; all collected changes reconciled; corrections for next period logged | What "done" means |
+
+| # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Send input request for the period | −12 WD | Owner | Line managers, Sales Ops | important | 20 | — | Send a short plain reminder with the cut-off date |
 | 2 | Collect employee changes (joiners, leavers, changes) | −8 WD | Owner | — | essential | 60 | — | Use the HR change log as of today; later changes go to next period |
@@ -732,11 +875,19 @@ Completion criteria: input file handed over by cut-off; all collected changes re
 | 9 | Review provider's pre-payroll check report | +2 WD | Owner | External payroll provider | important | 30 | 8 | — |
 | 10 | Log corrections for next period | +4 WD | Owner | — | optional | 15 | 9 | — |
 
-### A.3 Monthly HR Reporting (v1, deadline)
-Area RW. Anchor "Report delivery". Rule `nthWorkingDay(3)` with `anchorPeriodOffset: 1` (delivered in the month after the reporting month), 10:00. Lead time 3 working days. Attention 1 working day, recovery 1 working day.
-Completion criteria: report delivered to the agreed recipients; data issues logged.
+### A.3 Monthly HR Reporting (v1, deadline) — DRAFT
 
-| # | Task | Offset | Responsible | Contributor | Crit. | Effort | Depends on | Fallback |
+Area RW. All values below are draft assumptions:
+
+| Parameter | Draft assumption | To confirm |
+|---|---|---|
+| Anchor | "Report delivery", rule `nthWorkingDay(3)` with `anchorPeriodOffset: 1` (delivered in the month after the reporting month), 10:00 | Agreed delivery date and recipients |
+| Lead time | 3 working days | When preparation should start |
+| Attention / recovery window | 1 / 1 working day | When the team needs warning |
+| Owner / backup | HR Generalist / HR Coordinator | Who is accountable and who covers |
+| Completion criteria | Report delivered to the agreed recipients; data issues logged | What "done" means |
+
+| # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Extract HRIS data after month-end close | −2 WD 09:00 | Owner | — | essential | 30 | — | Use the last validated extract and mark the date |
 | 2 | Validate headcount and FTE against previous month | −2 WD 15:00 | HR Coordinator | — | essential | 45 | 1 | Validate totals only, explain deviations > 2 % |
@@ -759,12 +910,17 @@ Completion criteria: report delivered to the agreed recipients; data issues logg
   - Training "Leading through change" (one-off, starts 45 minutes after seeding: the existing rescue scenario).
   - Training "Excel essentials for managers" (one-off, in 4 days, partly prepared).
   - Training "HR systems refresher" (one-off, closed 5 days ago).
+- **Working time:**
+  - Mon–Fri, 08:00–17:00.
+  - Austrian public holidays 2026–2027 (6.1), `verified: false`.
+  - Company closures 24.12.2026 and 31.12.2026, labelled "Demo company closure", which can be removed in settings.
 - **Unavailability:** Sophie Lang unavailable on 2 working days within the current payroll period, without hand-over yet, so the cover flow can be demonstrated.
 
 ---
 
 ## Appendix C · Open points for review
 
-1. Appendix A task lists, offsets and fallbacks (your HR judgement; sign-off in M5).
-2. Working hours 08:00–17:00 for the recovery effort budget (7): acceptable assumption for the MVP?
-3. The seeded holiday list (6.1) should be checked against an official source before M2 is merged.
+1. **Appendix A.2 and A.3 (blocking for M5):** anchor rules, lead times, windows, task lists, offsets, owners, contributors and fallbacks are draft assumptions requiring your HR review.
+2. **Public-holiday seed (blocking for marking it verified):** check the 2026–2027 dates in 6.1 against § 7 Abs. 2 ARG in RIS. M2 can be merged with the list unverified, but the warning stays visible until you confirm it.
+3. **Default working time:** Mon–Fri, 08:00–17:00, no company closures pre-selected. These are defaults only and can be changed in the app. Do you want different defaults for the demo company?
+4. **Demo seed closures:** the demo company in Appendix B is seeded with 24.12. and 31.12. as company closures so that scenario D2 can be demonstrated. Confirm, or seed without them.
