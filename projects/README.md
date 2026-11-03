@@ -28,7 +28,7 @@ This document is the navigation page for the HR Solutions Lab project collection
 - **Project folder:** [HR Operations Hub](../hr-operations-hub/)
 - **Domain:** HR Operations readiness, operational playbooks and workflow coordination
 - **Target user:** HR Generalists and lean HR teams
-- **Status:** Product direction and MVP scope defined; implementation not started
+- **Status:** First functional slice committed (training playbook, Operations Radar, Activity Workspace and Rapid Recovery); automated validation in progress
 - **MVP surfaces:** Operations Radar, Playbook Library, Activity Workspace and Rapid Recovery
 - **Proposed USP:** Time-aware HR playbooks that make owners, lead times and dependencies visible, with a practical recovery view when an activity is running late. This is a product hypothesis, not a validated market-uniqueness claim.
 - **Portfolio role:** Demonstrates practical HR Operations process design, cross-functional coordination, readiness logic and workflow governance.
