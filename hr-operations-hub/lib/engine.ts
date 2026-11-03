@@ -80,7 +80,7 @@ export function getRecoveryPlan(activity: Activity, now: Date): RecoveryGroup[] 
     Math.floor((new Date(activity.startsAt).getTime() - now.getTime()) / 60_000),
   );
   const unresolved = activity.actions.filter((action) => !isActionResolved(action));
-  const byId = new Map(activity.actions.map((action) => [action.id, action]));
+  const byId = new Map<string, ActionInstance>(activity.actions.map((action) => [action.id, action] as const));
 
   const mustDoNow: ActionInstance[] = [];
   const canSimplify: ActionInstance[] = [];
