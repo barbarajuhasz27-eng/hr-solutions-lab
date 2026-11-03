@@ -26,10 +26,12 @@ This document is the navigation page for the HR Solutions Lab project collection
 
 ### HR Operations Hub
 - **Project folder:** [HR Operations Hub](../hr-operations-hub/)
-- **Domain:** Employee services, HR case management and workflow automation
-- **Status:** Product definition complete; implementation not started
-- **MVP surfaces:** Employee Portal, HR Service Desk and Operations Insights
-- **Portfolio role:** Demonstrates HR service-delivery design, case lifecycle management, queue ownership, service-target visibility and KPI governance.
+- **Domain:** HR Operations readiness, operational playbooks and workflow coordination
+- **Target user:** HR Generalists and lean HR teams
+- **Status:** Product direction and MVP scope defined; implementation not started
+- **MVP surfaces:** Operations Radar, Playbook Library, Activity Workspace and Rapid Recovery
+- **Proposed USP:** Time-aware HR playbooks that make owners, lead times and dependencies visible, with a practical recovery view when an activity is running late. This is a product hypothesis, not a validated market-uniqueness claim.
+- **Portfolio role:** Demonstrates practical HR Operations process design, cross-functional coordination, readiness logic and workflow governance.
 - **Documentation:** [Product brief](../hr-operations-hub/docs/PRODUCT_BRIEF.md) · [Process model](../hr-operations-hub/docs/PROCESS_MODEL.md) · [Data & privacy boundaries](../hr-operations-hub/docs/DATA_AND_PRIVACY.md) · [Build prompt](../hr-operations-hub/CLAUDE_BUILD_PROMPT.md)
 
 ## Planned projects
