@@ -56,11 +56,11 @@ Built with Next.js, React and TypeScript, with 332 automated tests. It runs loca
 **Status:** Live demo available. Feature-complete portfolio prototype; no user testing has been conducted, and reported figures are calculated from synthetic data and are illustrative only.
 
 ### 03 · [HR Operations Hub](./hr-operations-hub/)
-**Employee Services & HR Case Management**
+**HR Operations Readiness & Playbooks**
 
-A concept for structured employee requests, HR triage, case ownership, employee communication and operational insights. It complements Smart Onboarding by focusing on ongoing HR services after the first 90 days.
+A focused workspace for HR Generalists to prepare and coordinate recurring and one-off HR activities. Reusable playbooks define timed actions, owners and dependencies; a Rapid Recovery view helps prioritise essential work when an activity is running late.
 
-**Status:** In development — product brief and MVP scope defined. Implementation not started.
+**Status:** In development — product direction and MVP scope defined. Implementation not started.
 
 ### 04 · Compensation Intelligence
 **Salary Structures & Benefits Analytics**
