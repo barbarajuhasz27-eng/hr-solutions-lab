@@ -22,11 +22,20 @@ This document is the navigation page for the HR Solutions Lab project collection
 - **Portfolio role:** Demonstrates process analysis, stakeholder coordination, privacy-aware product design, transparent KPI definitions and end-to-end prototype development.
 - **Documentation:** [README](../smart-onboarding/README.md) · [Product brief](../smart-onboarding/docs/PRODUCT_BRIEF.md) · [Methodology](../smart-onboarding/docs/METHODOLOGY.md)
 
+## In development
+
+### HR Operations Hub
+- **Project folder:** [HR Operations Hub](../hr-operations-hub/)
+- **Domain:** Employee services, HR case management and workflow automation
+- **Status:** Product definition complete; implementation not started
+- **MVP surfaces:** Employee Portal, HR Service Desk and Operations Insights
+- **Portfolio role:** Demonstrates HR service-delivery design, case lifecycle management, queue ownership, service-target visibility and KPI governance.
+- **Documentation:** [Product brief](../hr-operations-hub/docs/PRODUCT_BRIEF.md) · [Process model](../hr-operations-hub/docs/PROCESS_MODEL.md) · [Data & privacy boundaries](../hr-operations-hub/docs/DATA_AND_PRIVACY.md) · [Build prompt](../hr-operations-hub/CLAUDE_BUILD_PROMPT.md)
+
 ## Planned projects
 
 | Project | Domain | Current status |
 |---|---|---|
-| HR Operations Hub | Employee requests and workflow design | Planned |
 | Compensation Intelligence | Compensation analytics using synthetic data | Planned |
 
 ## Documentation standard
