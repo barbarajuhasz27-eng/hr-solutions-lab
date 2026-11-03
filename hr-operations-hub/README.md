@@ -64,7 +64,7 @@ From the repository root:
 
 ```powershell
 cd hr-operations-hub
-npm.cmd install
+npm.cmd ci
 npm.cmd run dev
 ```
 
