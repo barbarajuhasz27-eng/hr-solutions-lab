@@ -24,7 +24,7 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. | Review of v1.0 |
 | D12 | Demo working-time defaults are **Monday–Friday, 08:00–12:00 and 13:00–17:00** (eight effective working hours with a one-hour lunch break). Demo company closures are **24.12. and 31.12.**, seeded as removable company-specific closures, never statutory public holidays. All defaults remain configurable. | User confirmation, 04.11.2026 |
 | D13 | Monthly Payroll Input Coordination is **provider-neutral**. No universal cut-off rule is assumed; the provider's actual cut-off date and time are configured for the operation and may be adjusted for an individual occurrence without changing the recurring schedule. | User confirmation, 04.11.2026 |
-| D14 | When a payroll-relevant input misses the cut-off or a correction is identified after handover, the demo workflow records it for **following-month payroll run via Aufrollung** (retroactive payroll adjustment), following the configured provider's process. Urgent exceptions are escalated rather than silently deferred. The Hub tracks the coordination; it does not calculate payroll or determine legal treatment. | User's HR experience, 04.11.2026 |
+| D14 | When a payroll-relevant input misses the cut-off or a correction is identified after handover, the demo workflow records it for **following month's payroll run as an Aufrollung** (retroactive payroll adjustment), following the configured provider's process. Urgent exceptions are escalated rather than silently deferred. The Hub tracks the coordination; it does not calculate payroll or determine legal treatment. | User's HR experience, 04.11.2026 |
 
 ---
 
@@ -864,20 +864,20 @@ Area PC. All values below are draft assumptions:
 | Lead time | 15 working days | When the cycle should start |
 | Attention / recovery window | 1 / 2 working days | When the team needs warning |
 | Owner / backup | HR Generalist / HR Operations Specialist | Who is accountable and who covers |
-| Completion criteria | Input file handed over by cut-off; collected changes reconciled; post-cut-off or otherwise late payroll-relevant items recorded for following-month payroll run via Aufrollung with an owner and follow-up; provider pre-payroll checks reviewed and open corrections documented | What "done" means |
+| Completion criteria | Input file handed over by cut-off; collected changes reconciled; post-cut-off or otherwise late payroll-relevant items recorded for following month's payroll run as an Aufrollung with an owner and follow-up; provider pre-payroll checks reviewed and open corrections documented | What "done" means |
 
 | # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Send input request for the period | −12 WD | Owner | Line managers, Sales Ops | important | 20 | — | Send a short plain reminder with the cut-off date |
-| 2 | Collect employee changes (joiners, leavers, changes) | −8 WD | Owner | — | essential | 60 | — | Use the HR change log as of today; record any omitted payroll-impacting change for following-month payroll run via Aufrollung; escalate urgent exceptions |
-| 3 | Collect variable pay inputs | −6 WD | Sales Ops | — | essential | 30 | 1 | Record missing inputs for following-month payroll run via Aufrollung under the provider's process; escalate urgent exceptions |
-| 4 | Collect overtime and allowance approvals | −5 WD | Line managers | — | essential | 40 | 1 | Submit approved items only; record outstanding approved items for following-month payroll run via Aufrollung; escalate urgent exceptions |
+| 2 | Collect employee changes (joiners, leavers, changes) | −8 WD | Owner | — | essential | 60 | — | Use the HR change log as of today; record any omitted payroll-impacting change for following month's payroll run as an Aufrollung; escalate urgent exceptions |
+| 3 | Collect variable pay inputs | −6 WD | Sales Ops | — | essential | 30 | 1 | Record missing inputs for following month's payroll run as an Aufrollung under the provider's process; escalate urgent exceptions |
+| 4 | Collect overtime and allowance approvals | −5 WD | Line managers | — | essential | 40 | 1 | Submit approved items only; record outstanding approved items for following month's payroll run as an Aufrollung; escalate urgent exceptions |
 | 5 | Validate master data changes in the HRIS | −4 WD | Owner | — | essential | 45 | 2 | Validate high-impact changes only (joiners, leavers) |
-| 6 | Confirm payroll-relevant time and absence inputs from approved system outputs | −3 WD | Owner | — | important | 20 | 2 | Record unresolved payroll-relevant inputs for following-month payroll run via Aufrollung; do not record absence reasons, diagnoses or medical details |
+| 6 | Confirm payroll-relevant time and absence inputs from approved system outputs | −3 WD | Owner | — | important | 20 | 2 | Record unresolved payroll-relevant inputs for following month's payroll run as an Aufrollung; do not record absence reasons, diagnoses or medical details |
 | 7 | Reconcile input list against change log (second pair of eyes) | −2 WD | Backup | — | essential | 45 | 3, 4, 5 | Owner reconciles alone and records it |
-| 8 | Hand over input file to payroll provider | 0 WD 12:00 | Owner | External payroll provider | essential | 15 | 7 | Record any payroll-relevant item not accepted before cut-off for following-month payroll run via Aufrollung; escalate urgent exceptions under the provider's process |
-| 9 | Review provider's pre-payroll check report | +2 WD | Owner | External payroll provider | important | 30 | 8 | Record unresolved corrections for following-month payroll run via Aufrollung where an in-period correction is not agreed; escalate urgent or material errors with the provider |
-| 10 | Consolidate late inputs and corrections for the following month's Aufrollung | +4 WD | Owner | — | essential | 30 | 2, 3, 4, 5, 6, 9 | Keep unresolved items in a carry-forward register with a named owner and next-period follow-up; escalate items not accepted by the provider |
+| 8 | Hand over input file to payroll provider | 0 WD 12:00 | Owner | External payroll provider | essential | 15 | 7 | Record any payroll-relevant item not accepted before cut-off for following month's payroll run as an Aufrollung; escalate urgent exceptions under the provider's process |
+| 9 | Review provider's pre-payroll check report | +2 WD | Owner | External payroll provider | important | 30 | 8 | Record unresolved corrections for following month's payroll run as an Aufrollung where an in-period correction is not agreed; escalate urgent or material errors with the provider |
+| 10 | Consolidate late inputs and corrections for the following month's payroll Aufrollung | +4 WD | Owner | — | essential | 30 | 2, 3, 4, 5, 6, 9 | Keep unresolved items in a carry-forward register with a named owner and next-period follow-up; escalate items not accepted by the provider |
 
 ### A.3 Monthly HR Reporting (v1, deadline) — DRAFT
 
