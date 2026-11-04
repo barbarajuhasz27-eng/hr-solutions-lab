@@ -1,6 +1,6 @@
 # HR Operations Hub — Consolidated Product & Implementation Specification
 
-**Version:** 1.1 (for approval) · **Date:** 03.11.2026 · **Base:** `main` @ `107ce78`
+**Version:** 1.2 (revised with HR decisions, pending final HR sign-off) · **Date:** 04.11.2026 · **Base:** `main` @ `107ce78`
 **Status:** Specification only. No application code changes until this document is approved.
 
 This document consolidates the Phase 1 redesign proposal and the decisions taken on it. Where it conflicts with `PRODUCT_BRIEF.md`, `PROCESS_MODEL.md` or `DATA_AND_PRIVACY.md`, this document wins. Those documents are updated in the final implementation PR. The privacy boundaries in `DATA_AND_PRIVACY.md` remain in force and are extended in section 10.
@@ -21,14 +21,21 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D8 | Statutory public holidays and company closures are **separate kinds** of entry. 24.12. and 31.12. are never treated as Austrian public holidays, but either can be configured as a company closure. | Review of v1.0 |
 | D9 | The **working week, daily working hours, public holidays and company closures are all configurable**. Nothing is hard-coded. Working-day calculations (dates) and working-hour calculations (time budgets) are separate. | Review of v1.0 |
 | D10 | Working-day counting conventions are defined precisely (6.2a) and pinned by expected-date tests. | Review of v1.0 |
-| D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. | Review of v1.0 |
+| D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. **Status 04.11.2026:** revised with decisions D13–D25; pending your final sign-off of the consolidated specification. | Review of v1.0 |
 | D12 | Demo working-time defaults are **Monday–Friday, 08:00–12:00 and 13:00–17:00** (eight effective working hours with a one-hour lunch break). Demo company closures are **24.12. and 31.12.**, seeded as removable company-specific closures, never statutory public holidays. All defaults remain configurable. | User confirmation, 04.11.2026 |
 | D13 | Monthly Payroll Input Coordination is **provider-neutral**. No universal cut-off rule is assumed; the provider's actual cut-off date and time are configured for the operation and may be adjusted for an individual occurrence without changing the recurring schedule. | User confirmation, 04.11.2026 |
 | D14 | When a payroll-relevant input misses the cut-off or a correction is identified after handover, the demo workflow records it for **following month's payroll run as an Aufrollung** (retroactive payroll adjustment), following the configured provider's process. Urgent exceptions are escalated rather than silently deferred. The Hub tracks the coordination; it does not calculate payroll or determine legal treatment. | User's HR experience, 04.11.2026 |
 | D15 | Payroll input reconciliation is a **four-eyes control**. The backup is the default second reviewer, but the owner may assign another qualified HR person. The reviewer must be independent of the person who prepared the payroll input. If no second reviewer is available, a documented owner self-check is an exception and must not be labelled as a completed four-eyes control. | User confirmation, 04.11.2026 |
 | D16 | HRIS master-data validation checks each approved, payroll-relevant change against the actual HRIS entry, including its effective date and payroll-period treatment. The Hub records only the check status and open follow-up items, never the personal change details. | User confirmation, 04.11.2026 |
-| D17 | Monthly HR Reporting is a **coordination playbook**, not an analytics engine. The Hub does not calculate headcount, FTE, joiner/leaver or turnover metrics and does not store report values or employee-level data. The Head of HR review is important but **does not block delivery**; if it is still pending at dispatch, the owner may send the report marked 'Not reviewed' and record the outstanding review. No universal percentage threshold is assumed for data variances. | User confirmation, 04.11.2026 |
+| D17 | Monthly HR Reporting is a **coordination playbook**, not an analytics engine. The Hub does not calculate headcount, FTE, joiner/leaver or turnover metrics and does not store report values or employee-level data. The Head of HR review is important but **does not block delivery**; if it is still pending at dispatch, the report is sent marked "Not reviewed at dispatch" and the review is completed afterwards (D22). No universal percentage threshold is assumed for data variances. | User confirmation, 04.11.2026 |
 | D18 | Cost-centre mapping is a **standard, essential input** for the monthly HR report. If Finance & Controlling has not confirmed the current mapping by the deadline, the previous month's mapping may be used as a documented fallback, clearly flagged in the report and retained as an open follow-up. | User confirmation, 04.11.2026 |
+| D19 | The generic rules distinguish **pre-anchor essential tasks** (due at or before the occurrence anchor) from **post-anchor essential tasks** (positive offset, legitimate follow-up work). Anchor-passed risk, the recovery window, "Must do now" and "Essentials covered" consider pre-anchor essentials only. Post-anchor essentials are tracked against their own due time and appear only in "After the anchor". `completed` and `completed-late` are decided by each essential task's due time and actual resolution time, not by when Close is clicked. An occurrence cannot close as completed while any essential task is unresolved (6.5, 7). | Audit H1, user confirmation, 04.11.2026 |
+| D20 | Payroll tasks 6 (time and absence inputs), 9 (provider pre-payroll check) and 10 (following-month Aufrollung) are **essential**. Task 9 stays provider-neutral: if the provider issues no pre-payroll check report, a documented confirmation of the provider's alternative validation, or that no such report is supplied, completes it. Task 8 is due at the configured cut-off time; no fixed time is assumed. | User confirmation, 04.11.2026 |
+| D21 | **Independence guard** for four-eyes controls (5.5). The reviewer must be a different person from the preparer, comparing effective responsibility including coverage and reassignment. For payroll the preparer is task 8's effective responsible at handover. An owner self-check is allowed only as the documented exception in A.2 task 7; its completion note states "Four-eyes control not completed" and it is never shown as a completed four-eyes control. | User confirmation, 04.11.2026 |
+| D22 | The Head of HR review **must ultimately be completed**, also when it takes place after delivery, and never blocks the agreed delivery. It is an essential post-anchor task (+1 WD). If it is pending at dispatch, the report is sent marked "Not reviewed at dispatch" (task 7 completion note) and the review task stays open until it is completed. No fallback marks the review as done. | User confirmation, 04.11.2026 |
+| D23 | HR Reporting task 8 (data issues) is **essential**. With no issues it is completed with "No issues identified". The HR system vendor is not a default contributor; it is contacted only when an actual system defect needs vendor support. | User confirmation, 04.11.2026 |
+| D24 | The aggregate reporting validator (A.3 task 2) defaults to the operation's **backup**. Another qualified HR person may be assigned, and a named person is required when no backup exists. The validator is independent of the report preparer (5.5). HRIS month-end data is normally available on the **second working day at 09:00**. | User confirmation, 04.11.2026 |
+| D25 | **Follow-up and privacy:** item-level registers (Aufrollung items, open HRIS checks, data issues, mapping follow-ups) stay in the authorised HRIS, payroll or other source systems. The Hub keeps only short, aggregated status and completion/close-out notes (counts and categories). No follow-up entity, carry-forward register or case-management workflow is added (4.5). | User confirmation, 04.11.2026 |
 
 ---
 
@@ -40,7 +47,7 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 
 **Product hypothesis (to validate, not a claim):** HR-specific playbooks, explicit ownership, working-day-aware recurrence and explainable recovery create a more coherent operational workspace than generic task or project tools.
 
-**Boundaries:** the Hub coordinates and records completion. It does not calculate pay, store salary values, store absence reasons or health data, send messages, book resources or change other systems.
+**Boundaries:** the Hub coordinates and records completion. It does not calculate pay or reporting metrics, send messages, book resources or change other systems. It never stores employee names, individual identifiers, salary or payment amounts, absence reasons, health data, report values or detailed payroll cases. Item-level registers stay in the authorised source systems (4.5).
 
 ---
 
@@ -154,6 +161,10 @@ interface TaskTemplate {
   estimatedMinutes: number;        // effort, not lead time
   dependsOn: string[];             // TaskTemplate ids
   fallback?: string;
+  independence?: {                 // four-eyes guard, see 5.5
+    of: string[];                  // TaskTemplate ids whose effective responsible must be a different person
+    selfCheckFallback: boolean;    // true: the fallback is a documented self-check exception
+  };
 }
 
 interface Playbook {
@@ -239,9 +250,11 @@ interface Task {
   estimatedMinutes: number;
   dependsOn: string[];
   fallback?: string;
+  independence?: { of: string[]; selfCheckFallback: boolean }; // snapshot of the template, see 5.5
   status: "not-started" | "in-progress" | "waiting" | "blocked" | "done" | "skipped";
   hold?: { kind: "waiting" | "blocked"; waitingOn?: string; note?: string; since: ISODateTime };
-  completionNote?: string;
+  resolvedAt?: ISODateTime;        // set when status becomes done or skipped, cleared on reopen (6.5)
+  completionNote?: string;         // privacy-safe aggregated status only (4.5)
   fallbackUsed?: boolean;
 }
 
@@ -311,6 +324,18 @@ interface StoreV3 {
 
 All changes go through named actions in a reducer (`completeTask`, `setHold`, `releaseHold`, `useFallback`, `reassignTask`, `addCoverage`, `moveOccurrence`, `skipOccurrence`, `closeOccurrence`, `updateSchedule`, `updateOwnership`, `updateCalendar`, `createOperation`, …). Every action that changes an occurrence appends a `HistoryEvent`. Pure engine functions never read the clock. They receive `now`.
 
+### 4.5 Notes, follow-ups and privacy boundary
+
+The Hub holds coordination status, not case data. This applies to every free-text field: `completionNote`, `hold.note`, `closeNote`, `reviewNote`, recovery decisions and escalation notes.
+
+- **Allowed:** short, aggregated, privacy-safe status notes, with counts and categories only. Examples: "2 joiner changes carried forward", "HRIS checks: 3 open, follow-up in the HRIS", "Previous month's cost-centre mapping used, confirmation pending with Finance & Controlling", "Not reviewed at dispatch", "No issues identified".
+- **Never stored:** employee names, personnel numbers or other individual identifiers, salary or payment amounts, individual payroll correction details or payroll cases, absence reasons, diagnoses or other health information, and report values (headcount, FTE, joiner/leaver or turnover figures).
+- **Registers stay outside the Hub.** Item-level registers (Aufrollung items, open HRIS checks, data issues, mapping follow-ups) are kept in the authorised HRIS, payroll or other source system. Each open item has its named owner there. The Hub has no follow-up entity, carry-forward register or case-management workflow, and none is added.
+- **No inheritance between occurrences.** Closed occurrences are read-only (6.5). The next period's occurrence does not inherit item-level records or open follow-ups from the previous one. Its owner consults the external register and records only an aggregated status in the new occurrence, normally in the completion note of the task that handles it (for example A.2 task 10, A.3 task 3 or 8).
+- Note inputs show the hint "Status only: counts and categories, no names, amounts or reasons." The Hub does not inspect note content; this rule and the hint are the safeguard.
+
+In playbook texts (Appendix A), "record" always means: the item is kept in the source register, and the Hub notes only an aggregated status.
+
 ---
 
 ## 5. Responsibility and backup logic
@@ -326,6 +351,8 @@ All changes go through named actions in a reducer (`completeTask`, `setHold`, `r
 | Approver | — | — | **Not in MVP.** Approval steps are modelled as normal review tasks (e.g. "Review by Head of HR"). |
 
 `unassigned` is allowed only for non-essential tasks. An essential task can never be unassigned. Creation forms and the reducer reject it.
+
+`backup` in a template resolves to the occurrence's backup. If the operation has no backup, an essential task whose template responsible is `backup` must receive a named person when the operation is created, otherwise creation is rejected. The recurring-operation flow has no task-level overrides (9.4), so recurring operations using such a playbook (A.2, A.3) require a backup. A one-off use may name the person as a task-level override instead.
 
 ### 5.2 Effective responsible
 
@@ -356,6 +383,32 @@ Each occurrence shows exactly one "Next" line, derived as follows:
 - On saving, the Hub lists affected open occurrences: tasks whose effective responsible is that person with `dueAt` in the range, and occurrences they own with the anchor in the range.
 - "Hand over to backup" creates one Coverage per affected occurrence, with that occurrence's backup as covering person. Occurrences without a backup, or where the backup is also unavailable, are listed as **"needs a cover decision"** with a person picker.
 - A new readiness reason, `owner-unavailable`, applies to unresolved essential tasks whose effective responsible is unavailable on the due date: a *risk* inside the attention window, *attention* otherwise.
+- Hand-over, cover and reassignment are subject to the independence guard (5.5).
+
+### 5.5 Independence guard (four-eyes controls)
+
+A task template can declare `independence: { of, selfCheckFallback }`. The task is then a **review task**, and the tasks listed in `of` are its **preparer tasks**.
+
+1. **Comparison.** The reviewer is the review task's effective responsible (5.2). The preparer is each preparer task's effective responsible. Each is evaluated for its own task's due date, and both include coverage and reassignment. A counterparty never matches a person.
+2. **Completing the review.** Completing the review task normally, or through its fallback when `selfCheckFallback` is false, requires the reviewer to differ from every preparer at that moment. The `task-completed` event records the reviewer's person id and `independent: true` in `detail`. `actorId` (the simulated current user) is not used for this check.
+3. **Self-check exception.** When `selfCheckFallback` is true, the fallback is the documented self-check exception. It is recorded with `fallbackUsed: true` and `independent: false`, and its completion note must begin with **"Four-eyes control not completed"**. It is never shown or counted as a completed four-eyes control. When `selfCheckFallback` is false, there is no self-check path: the review task stays open until an independent person is assigned.
+4. **Conflict while open.** While the reviewer equals a preparer on an open review task, the reason `independence-conflict` applies (*risk* inside the attention window, *attention* otherwise). Recovery mode lists the task in "Needs someone else" with *Reassign*.
+5. **Conflict after completion.** Once a review task is completed as independent, a coverage, hand-over or reassignment that would make a preparer task's effective responsible equal to the recorded reviewer is not applied silently. The Hub asks for a decision: choose a different person for the preparer task, or reopen the review task for another reviewer (or, where `selfCheckFallback` is true, convert it to the documented self-check exception). The same check runs when a preparer task is completed. The decision is logged as `recovery-decision`.
+6. **Qualification** of the reviewer is the owner's judgment. The Hub enforces independence, not qualification.
+
+Uses in the MVP: A.2 task 7 (`of: ["8"]`, `selfCheckFallback: true`) and A.3 task 2 (`of: ["5"]`, `selfCheckFallback: false`).
+
+Reference tests (M4). Owner Sophie Lang, backup Daniel Hofer, other HR person Lena Gruber, unless stated:
+
+| # | Situation | Expected |
+|---|---|---|
+| I1 | A.2: task 7 → Daniel (backup), task 8 → Sophie (owner) | Task 7 can be completed as a four-eyes control |
+| I2 | A.2: Sophie unavailable on the cut-off date and handed over to Daniel; task 7 open | Task 8's effective responsible is Daniel, equal to the reviewer → `independence-conflict`. Normal completion of task 7 is unavailable; only the self-check fallback, labelled "Four-eyes control not completed" |
+| I3 | A.2: as I2, but task 7 was already completed by Daniel as a four-eyes control | The hand-over is not applied silently. Decision: another person for task 8, reopen task 7, or convert it to the self-check exception |
+| I4 | A.2: task 7 reassigned to Sophie | `independence-conflict`, as I2 |
+| I5 | A.2: task 7 reassigned to Lena | Allowed, four-eyes control |
+| I6 | A.3 (owner Sophie, backup Lena): task 5 handed over from Sophie to Lena while task 2 → Lena is open | `independence-conflict`. Task 2 cannot be completed until a different person is assigned |
+| I7 | Recurring A.2 or A.3 operation created without a backup | Rejected (5.1) |
 
 ---
 
@@ -422,7 +475,7 @@ Working hours are a **separate layer** from working days, with their own module 
 
 - Working hours are configured per working weekday (`workingHours`) as one or more ordered, non-overlapping intervals. The demo default is Monday–Friday, 08:00–12:00 and 13:00–17:00: eight effective working hours per day, with 12:00–13:00 treated as a non-working lunch break. Both intervals and the working week can be changed in Calendar → Working time.
 - Changing working hours **never moves a deadline**. It only changes the reported time budget and the recovery grouping.
-- A due time outside working hours is allowed. The 12:00 payroll cut-off is a date-and-time fact, not a working-hours calculation.
+- A due time outside working hours is allowed. A provider cut-off is a date-and-time fact configured per operation (and adjustable per occurrence), not a working-hours calculation.
 - If a working weekday has no hours configured, it contributes zero working minutes, and the settings panel flags it.
 
 ### 6.2 Anchor calculation
@@ -453,6 +506,8 @@ All counting is on working days as defined in 6.1. Calendar days that are not wo
 
 Times of day do not affect any of these counts. The due time is applied after the date has been determined.
 
+The worked examples below and the payroll fixtures in 6.2b use a **fictional demo provider** whose cut-off is configured as `workingDaysBeforeMonthEnd(5)` at 12:00 (Appendix B). This is test and demo configuration, not a universal payroll rule (D13).
+
 **Worked example, November 2026 (AT 2026, Mon–Fri week, no closures).** The last working day is Mon 30.11. (position 0). Counting back: Fri 27. (1), Thu 26. (2), Wed 25. (3), Tue 24. (4), **Mon 23.** (5). Anchor: **Mon 23.11.2026 12:00**.
 
 **Worked example, December 2026.** Non-working days in all variants: Sat/Sun, Fri 25.12., Sat 26.12. (public holidays). The company-closure configuration changes the result:
@@ -481,7 +536,7 @@ Each row is an expected-date test. The calendar is AT public holidays with a Mon
 | T9 | dayOfMonth(31), next-working-day shift | 11/2026 | none | Mon 30.11.2026 (clamped, already a working day) |
 | T10 | dayOfMonth(15), previous-working-day shift | 08/2026 | none | Fri 14.08.2026 (15.08. is a Saturday and a holiday) |
 
-Task due-date tests (6.3) for the payroll anchor:
+Task due-date tests (6.3) for the demo provider's payroll anchor (test fixtures for a fictional configured provider):
 
 | # | Anchor | Closures | Offset | Expected date |
 |---|---|---|---|---|
@@ -506,7 +561,7 @@ Working-hour tests (6.1a, separate test file):
 
 For each task template:
 
-- `workingDays`: move from the anchor's local date by `amount` working days (negative = earlier, 0 = anchor date). Time = `dueTime` or the anchor time. Example: payroll anchor Mon 23.11. 12:00, offset −6 working days → Fri 13.11. 12:00.
+- `workingDays`: move from the anchor's local date by `amount` working days (negative = earlier, 0 = anchor date). Time = `dueTime` or the anchor time. Example (demo provider): anchor Mon 23.11. 12:00, offset −6 working days → Fri 13.11. 12:00.
 - `calendarDays`: move by calendar days. If the result is not a working day, move to the previous working day.
 - `hours` / `minutes`: exact duration from the anchor instant (event playbooks).
 
@@ -523,11 +578,12 @@ Deadline playbooks use working-day offsets. Event playbooks use minute or hour o
 
 - **Move:** the user picks a new anchor date and time for one occurrence. `originalAnchorAt` keeps the rule date. Task due dates are recalculated from the new anchor for unresolved tasks only. Logged as `moved`. A move onto a non-working day requires confirmation.
 - **Skip:** requires a reason (≤ 160 characters). Status `skipped`, kept in history, excluded from on-time statistics but shown as a hollow dot.
-- **Close:** always an explicit user action, never automatic.
-  - `completed`: all essential tasks resolved, closed at or before the anchor.
-  - `completed-late`: all essential tasks resolved, closed after the anchor.
-  - `missed`: closed with unresolved essential tasks. Requires a note.
+- **Close:** always an explicit user action, never automatic. The outcome is computed from the essential tasks' own due times and actual resolution times (`Task.resolvedAt`), never from the anchor alone or from the moment Close is clicked. This covers both pre-anchor and post-anchor essential tasks (7).
+  - `completed`: all essential tasks resolved, and each was resolved at or before its own `dueAt`.
+  - `completed-late`: all essential tasks resolved, and at least one was resolved after its own `dueAt`.
+  - `missed`: closed with unresolved essential tasks, including open post-anchor essentials. Requires a note.
   - `cancelled`: one-off operations only, requires a note.
+  - An occurrence cannot be closed as `completed` or `completed-late` while any essential task, including a post-anchor one, is unresolved.
 - **Overdue occurrences do not block** the next one. Both are shown. The older one shows "carried over" on Calendar and Today.
 
 ### 6.6 Changing a schedule
@@ -557,7 +613,7 @@ When the working week, public holidays or company closures change (working hours
 
 ## 7. Readiness and Rapid Recovery on occurrences
 
-The current, tested rules are kept and applied per occurrence, with three generalisations:
+The current, tested rules are kept and applied per occurrence, with four generalisations:
 
 1. **Anchor instead of start time.** All rules read `anchorAt`. For deadline playbooks the anchor is the cut-off or delivery time.
 2. **Windows per playbook.** `attentionWindow` and `recoveryWindow` replace the fixed 24 hours and 60 minutes. Working-day windows are measured in working days.
@@ -568,22 +624,44 @@ The current, tested rules are kept and applied per occurrence, with three genera
    | Monthly Payroll Input Coordination | 1 working day | 2 working days |
    | Monthly HR Reporting | 1 working day | 1 working day |
 
-3. **Reasons as codes.** The engine returns `{ code, severity, taskId?, params }` instead of English sentences. The UI renders them from a message catalogue (localisation-ready). Existing codes stay: `start-passed` (renamed `anchor-passed`), `blocked`, `deadline-passed`, `waiting-near-deadline`, `insufficient-time`, `dependency-risk`, `waiting`, `due-soon`. New codes: `owner-unavailable`, `calendar-drift`, `calendar-missing-holidays`.
+3. **Reasons as codes.** The engine returns `{ code, severity, taskId?, params }` instead of English sentences. The UI renders them from a message catalogue (localisation-ready). Existing codes stay: `start-passed` (renamed `anchor-passed`), `blocked`, `deadline-passed`, `waiting-near-deadline`, `insufficient-time`, `dependency-risk`, `waiting`, `due-soon`. New codes: `owner-unavailable`, `calendar-drift`, `calendar-missing-holidays`, `independence-conflict` (5.5).
+4. **Pre-anchor and post-anchor tasks.** A task is *pre-anchor* when `dueAt ≤ anchorAt` and *post-anchor* when `dueAt > anchorAt` (positive offset). Post-anchor essential tasks are legitimate follow-up work (A.2 tasks 9 and 10, A.3 tasks 6 and 8). Their due dates are not missed merely because the anchor has passed.
+   - `anchor-passed` applies only to unresolved **pre-anchor** essential tasks.
+   - The recovery window, the time budget (`insufficient-time`, `dependency-risk`) and "Must do now" consider pre-anchor tasks only.
+   - Post-anchor tasks are tracked against their own `dueAt`: `due-soon` when their own due date is inside the playbook's attention window, `deadline-passed` (risk) once their own due time has passed. Before that they never create a risk.
 
-**Status precedence stays as today:** anchor passed with open essentials → At risk. Inside the recovery window with open essentials → Recovery. Any risk reason → At risk. Any attention reason → Needs attention. Otherwise → Preparing, or Ready when nothing is open.
+**Status precedence:** anchor passed with open pre-anchor essentials → At risk. Inside the recovery window with open pre-anchor essentials → Recovery. Any risk reason (including `deadline-passed` on a post-anchor task) → At risk. Any attention reason → Needs attention. Otherwise → Preparing before the anchor; after the anchor, **Follow-up** while post-anchor tasks are open (calm styling, label only); Ready when nothing is open.
 
-**Rapid Recovery groups:**
+**Rapid Recovery groups.** Classification is by due time first: a post-anchor task is placed only in "After the anchor" and never in a second group. Each task appears in exactly one group.
 
 | Group | Rule | Change from today |
 |---|---|---|
-| Must do now | Essential, unblocked, fits the remaining time budget | Budget is effort minutes. For deadline playbooks the time left is the number of working minutes until the anchor, calculated by `working-hours` from the configured working hours (6.1a). |
-| Can simplify | Essential that does not fit and has a fallback; important with a fallback | — |
-| Needs someone else | Waiting / blocked holds, open prerequisites, essential without fallback that does not fit, effective responsible unavailable | Adds the unavailable case, with "Hand over" and "Reassign" actions |
-| After the anchor | Optional tasks, important tasks without fallback, and tasks with a positive offset (e.g. post-payroll check) | Renamed from "Can follow up later". Includes post-anchor tasks. |
+| Must do now | Pre-anchor essential, unblocked, fits the remaining time budget | Budget is effort minutes. For deadline playbooks the time left is the number of working minutes until the anchor, calculated by `working-hours` from the configured working hours (6.1a). Post-anchor tasks never count against this budget. |
+| Can simplify | Pre-anchor essential that does not fit and has a fallback; pre-anchor important with a fallback | — |
+| Needs someone else | Pre-anchor tasks with waiting / blocked holds, open prerequisites, an unavailable effective responsible or an `independence-conflict`; pre-anchor essential without fallback that does not fit | Adds the unavailable and independence cases, with "Hand over" and "Reassign" actions |
+| After the anchor | **Every post-anchor task**, whatever its criticality or hold (post-anchor essentials are labelled "Essential follow-up · due DD.MM. HH:mm"); pre-anchor optional tasks and pre-anchor important tasks without fallback | Renamed from "Can follow up later". Includes all post-anchor tasks. |
 
 Every recovery action (fallback, reassign, hand over, postpone past anchor, escalation note) writes a `recovery-decision` history event shown in the **decision log**. "Note escalation" records text only. Nothing is sent.
 
 > Working hours are only used for the effort budget and the countdown. Whether an occurrence is in its recovery or attention window is decided in working **days**, so changing working hours never changes readiness status or deadlines. It can only move tasks between "Must do now" and "Can simplify". Event playbooks (Training Session) use plain elapsed minutes, not working hours.
+
+### 7.1 Reference scenarios for post-anchor tasks (become tests in M3 and M8)
+
+M3 runs these on neutral fixtures with the same offsets. M8 re-runs them against the reviewed playbooks. Payroll uses the demo provider anchor Mon 23.11.2026 12:00: task 9 due Wed 25.11. 12:00 (+2 WD), task 10 due Fri 27.11. 12:00 (+4 WD). Reporting uses the anchor Wed 04.11.2026 10:00: task 6 due Thu 05.11. 10:00 (+1 WD), task 8 due Fri 06.11. 10:00 (+2 WD). Post-anchor due times default to the anchor time.
+
+| # | Situation | Expected |
+|---|---|---|
+| R1 | Payroll, now Mon 23.11. 14:00. Tasks 1–8 done on time, 9 and 10 open | No `anchor-passed`. Readiness Follow-up. Not counted under "At risk" |
+| R2 | Payroll, now Tue 24.11. 10:00. Task 9 open | `due-soon` (attention) on task 9 → Needs attention |
+| R3 | Payroll, now Wed 25.11. 12:01. Task 9 open | `deadline-passed` (risk) on task 9 → At risk. Still no `anchor-passed` |
+| R4 | Payroll, now Fri 20.11. 10:00 (inside the 2 WD recovery window). Tasks 1–7 done; task 8 open; tasks 9 and 10 open | Recovery. Task 8 in "Must do now"; tasks 9 and 10 only in "After the anchor", labelled "Essential follow-up". Once task 8 is done: "Essentials covered. You can leave recovery" with "2 essential follow-ups remain" |
+| R5 | Payroll. All pre-anchor essentials on time, task 9 done 25.11. 10:00, task 10 done 27.11. 11:00, Close clicked Mon 30.11. 09:00 | `completed`. Clicking Close later does not make it late |
+| R6 | As R5, but task 10 done 27.11. 15:00 | `completed-late` |
+| R7 | Payroll. Close attempted while task 10 is open | Only `missed` (with note) is offered |
+| R8 | Reporting. Task 7 completed Wed 04.11. 09:50 while task 6 is open | Allowed: task 6 is not a prerequisite. Completion note "Not reviewed at dispatch" pre-filled and required. Task 6 stays open. At 04.11. 10:30 task 6 causes no `anchor-passed` |
+| R9 | Reporting. Task 6 done Thu 05.11. 09:30, all other essentials on time | `completed`. If task 6 is done 05.11. 11:00 instead → `completed-late` |
+| R10 | Reporting. Task 8 completed with "No issues identified" Fri 06.11. 09:00 | Resolved on time. If it is still open at 06.11. 10:01 → `deadline-passed` on task 8 |
+| R11 | Recovery board for any of these occurrences | Every task appears in exactly one group. No post-anchor task appears in "Must do now", "Can simplify" or "Needs someone else" |
 
 ---
 
@@ -689,10 +767,10 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 - **Empty:** "Nothing due this week. Next cut-off: …".
 
 ### 9.2 Portfolio (`/portfolio`)
-- Table grouped by area (collapsible). Columns: Operation · Cadence in words ("Monthly · 5 working days before month end · 12:00") · Owner / Backup · Next anchor · Current occurrence state · Last 6 (DotHistory: filled = on time, half = late, ring = skipped, cross = missed).
+- Table grouped by area (collapsible). Columns: Operation · Cadence in words (demo provider: "Monthly · 5 working days before month end · 12:00") · Owner / Backup · Next anchor · Current occurrence state · Last 6 (DotHistory: filled = on time, half = late, ring = skipped, cross = missed).
 - Actions: *New operation* (from playbook) · row → operation detail.
 - **Operation detail:** definition summary, ScheduleEditor with preview of the next three anchors, ownership editor, playbook version, occurrence list (newest first), pause or retire.
-- Definition shown on screen: "On time = closed at or before its anchor." No percentages in the MVP.
+- Definition shown on screen: "On time = every essential task resolved by its own due time (6.5)." No percentages in the MVP.
 
 ### 9.3 Calendar (`/calendar`)
 - Toggle: **Timeline** (default) · **Month**.
@@ -715,17 +793,17 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 - Playbooks are read-only in the MVP.
 
 ### 9.5 Occurrence (`/o/[id]`)
-- **Header:** operation title · period ("November 2026") · anchor label and date ("Provider cut-off · Mo 23.11.2026 12:00 · in 14 working days") · status · readiness · **Next actor** · *Open recovery* when At risk or in Recovery.
+- **Header:** operation title · period ("November 2026") · anchor label and date (demo provider: "Provider cut-off · Mo 23.11.2026 12:00 · in 14 working days") · status · readiness · **Next actor** · *Open recovery* when At risk or in Recovery.
 - **Main (8/12):** TaskTimeline (offset axis to the anchor, dependency connectors) with a Table toggle. Task row actions: complete, Waiting / blocked, release, use fallback, reassign.
 - **Side (4/12):** Responsibilities (owner, backup, cover), Inputs outstanding (tasks with contributors or Waiting holds), Readiness reasons.
 - **Bottom:** HistoryLog (newest first, filterable by task).
-- **Close-out:** *Close occurrence* opens a dialog with the computed outcome, required note where applicable, review note and "playbook needs a change". Afterwards the occurrence is read-only, with a summary (late tasks, hold durations, fallbacks, recovery decisions).
+- **Close-out:** *Close occurrence* opens a dialog with the computed outcome (6.5), required note where applicable, review note and "playbook needs a change". `completed` or `completed-late` is offered only when all essential tasks, including post-anchor ones, are resolved; otherwise only `missed` with a required note. Afterwards the occurrence is read-only, with a summary (late tasks, hold durations, fallbacks, recovery decisions). Self-check exceptions are listed separately as "Four-eyes control not completed", and a report sent before review as "Not reviewed at dispatch". Notes follow 4.5.
 
 ### 9.6 Recovery mode (`/o/[id]/recovery`)
-- Full-screen dark. **Header:** "RECOVERY MODE", occurrence title, owner and cover, what happens at the anchor. Countdown in mono, measured in working hours for deadline playbooks ("1 d 02 h to cut-off · Mo 23.11.2026 12:00").
-- **Four columns:** Must do now · Can simplify · Needs someone else · After the anchor. Each card: title, effective responsible, effort, *why* (rendered reason), actions.
+- Full-screen dark. **Header:** "RECOVERY MODE", occurrence title, owner and cover, what happens at the anchor. Countdown in mono, measured in working hours for deadline playbooks (demo provider: "1 d 02 h to cut-off · Mo 23.11.2026 12:00"). Once the anchor has passed, the countdown reads "Anchor passed" and post-anchor tasks show their own due times.
+- **Four columns:** Must do now · Can simplify · Needs someone else · After the anchor (7). Each task appears in exactly one column; post-anchor tasks only in After the anchor. Each card: title, effective responsible, effort, *why* (rendered reason), actions.
 - **Decision log** pinned at the bottom.
-- *Leave recovery* returns to the occurrence. When no essential task is open, the header shows "Essentials covered. You can leave recovery".
+- *Leave recovery* returns to the occurrence. When no essential task due at or before the anchor is open, the header shows "Essentials covered. You can leave recovery", even if post-anchor essential follow-ups remain. These are shown as a count with the next due time ("2 essential follow-ups remain · next due We 25.11. 12:00"). Post-anchor essentials never keep an occurrence in recovery.
 
 ### 9.7 People (`/people`)
 - Rows for people, then counterparties. Columns: Owns (operations) · Backup for · Next 4 weeks (task count per KW, essential count highlighted) · Overdue · Unavailable (bars on the 4-week scale).
@@ -746,7 +824,7 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 5. Move, skip, close, schedule versions, calendar drift (6.5–6.7).
 6. Readiness and recovery on occurrences with per-playbook windows and reason codes (7).
 7. Owner, backup, responsible, contributors, next actor, unavailability, coverage (5).
-8. Three playbooks (Appendix A). Payroll and reporting are implemented only after your HR review of the draft assumptions.
+8. Three playbooks (Appendix A). Payroll and reporting are implemented only after your final HR sign-off of the revised drafts.
 9. Screens: Today, Portfolio and operation detail, Calendar with working-day settings, Playbooks with both "use" flows, Occurrence with close-out, Recovery mode, People.
 10. Synthetic seed: 4 HR people, 9 counterparties, the three operations with plausible history (Appendix B).
 11. Demo banner, reset demo, stale-demo handling adapted to recurrence (11.4).
@@ -762,7 +840,8 @@ Every screen has a designed empty state, and a "data could not be loaded, demo r
 - Workload capacity in hours, bottleneck analytics, "consistently late" insights, trend charts and percentages.
 - Notifications, reminders, email, calendar, Teams, HRIS, payroll provider or IT integrations.
 - Authentication, multiple real users, permissions, backend, database, export or import.
-- Any payroll figures, salary data, absence reasons or health data.
+- Any payroll figures, salary data, absence reasons or health data, employee names or identifiers, report values, or individual payroll correction details (4.5).
+- Follow-up entities, carry-forward registers or case-management workflows inside the Hub. Item-level registers stay in the authorised source systems (4.5).
 - Full UI localisation (only formatting and data-driven messages are prepared).
 - Deployment or any change to Vercel or Smart Onboarding.
 
@@ -826,14 +905,14 @@ Each milestone is **one pull request** from its own branch off the latest `main`
 |---|---|---|
 | **S** (this document) | `docs/OPERATIONS_SPEC.md`, README link | You approve the specification. |
 | **M0 · Identity and shell** | Tokens, fonts via `next/font`, top bar, exception strip, routes (`/`, `/calendar`, `/portfolio`, `/people`, `/playbooks`, `/o/[id]`, `/o/[id]/recovery`). The current activity, playbook and recovery views ported to the new shell. Calendar, Portfolio and People show honest "coming in M6/M7/M9" states. | All 51 current tests pass unchanged. Every existing feature works at its new URL. No left sidebar, cream, teal or Inter. Light and dark workspace, recovery always dark. Browser review by you. |
-| **M1 · Domain model v3 and store** | Types, reducer actions with history events, v3 storage, migration (11), `lib/format.ts`, message catalogue. | Migration tests (11.5) pass. Every reducer action has a test asserting its history event. Format tests: `DD.MM.YYYY`, 24 h, KW. |
+| **M1 · Domain model v3 and store** | Types, reducer actions with history events, v3 storage, migration (11), `lib/format.ts`, message catalogue. | Migration tests (11.5) pass. Every reducer action has a test asserting its history event. `Task.resolvedAt` is set when a task becomes done or skipped and cleared on reopen (tested). Format tests: `DD.MM.YYYY`, 24 h, KW. |
 | **M2 · Working time and schedule engine** | `working-days` and `working-hours` as separate modules. Working week, working hours, public holidays (with source and `verified`), company closures. All five rules with the 6.2a counting conventions, weekend shift, Europe/Vienna conversion, generation horizon, projection, activation, period keys. | Expected-date tests T1–T17 (6.2b) pass, including all four December closure scenarios. Working-hour tests T18–T21 pass. KW and DST tests (6.8) pass. 24.12. and 31.12. are not in the public-holiday seed. The `working-days` module does not import `working-hours`. Generation is idempotent. Pausing and end dates are respected. **The holiday seed stays `verified: false` until you have checked it against RIS.** |
-| **M3 · Readiness and recovery on occurrences** | Engine anchored on `anchorAt`, offset units, per-playbook windows, working-minute budget, reason codes, new codes. | Training scenario behaves exactly as today (ported tests). Payroll occurrence enters Recovery 2 working days before cut-off, not early over a weekend or holiday. Changing working hours changes the budget but not readiness status (tested). Recovery groups include post-anchor tasks in "After the anchor". |
-| **M4 · Responsibility** | People, counterparties, owner/backup validation, effective responsible, next actor, unavailability, coverage, `owner-unavailable`. | Next actor correct for: plain, waiting, blocked, covered, all-prerequisites-open and nothing-open cases. Removing coverage restores assignments. Essential tasks cannot be unassigned. No absence reason field exists. |
-| **M5 · Playbooks and "use" flows** | **Precondition: your written HR review of Appendix A.2 and A.3, with any changes incorporated into this spec first.** Then author payroll and reporting playbooks as reviewed, Training Session v2, library, detail, one-off and recurring creation flows with anchor preview. | Implemented task lists match the reviewed Appendix A exactly. Created operations generate correct occurrences. Optional tasks can be removed, essential cannot. |
+| **M3 · Readiness and recovery on occurrences** | Engine anchored on `anchorAt`, offset units, per-playbook windows, working-minute budget, reason codes, new codes. | Training scenario behaves exactly as today (ported tests). Payroll occurrence enters Recovery 2 working days before cut-off, not early over a weekend or holiday. Changing working hours changes the budget but not readiness status (tested). Recovery groups include post-anchor tasks in "After the anchor". Post-anchor scenarios R1–R4, R8, R10 and R11 (7.1) pass on neutral fixtures: post-anchor essentials raise no `anchor-passed` risk, `deadline-passed` only after their own due time, each task sits in exactly one recovery group, and "Essentials covered" appears while post-anchor essentials are still open. |
+| **M4 · Responsibility** | People, counterparties, owner/backup validation, effective responsible, next actor, unavailability, coverage, `owner-unavailable`. | Next actor correct for: plain, waiting, blocked, covered, all-prerequisites-open and nothing-open cases. Removing coverage restores assignments. Essential tasks cannot be unassigned; a `backup` reference without a backup is rejected (5.1). Independence guard tests I1–I7 (5.5) pass, including coverage, hand-over and reassignment. No absence reason field exists. |
+| **M5 · Playbooks and "use" flows** | **Precondition: your final written HR sign-off of the revised Appendix A.2 and A.3 (v1.2 or later), recorded in this spec (review status table, D11, Appendix C #1).** Then author payroll and reporting playbooks as signed off, Training Session v2, library, detail, one-off and recurring creation flows with anchor preview. | Implemented task lists match the signed-off Appendix A exactly. A.2 task 7 and A.3 task 2 carry the `independence` settings in 5.5. Every A.2 and A.3 completion criterion maps to an essential task. Created operations generate correct occurrences. Recurring A.2/A.3 operations cannot be created without a backup. Optional tasks can be removed, essential cannot. |
 | **M6 · Today and Portfolio** | Agenda, week grid, footer band, filters. Portfolio table, DotHistory, operation detail with ScheduleEditor (versions, preview) and ownership editor. | Every count in the exception strip is a working filter. Schedule edit regenerates only not-started occurrences (tested). Dot history matches closed occurrence outcomes. |
 | **M7 · Calendar** | Timeline and month views, projection drawing, move and skip, carried-over column, working-time settings, calendar drift, missing-year warning. | Generated, projected, moved, skipped and carried-over occurrences are visually distinct. Holiday change recalculates not-started occurrences and flags started ones (tested). |
-| **M8 · Occurrence, Recovery mode, close-out** | Occurrence workspace, task timeline and table, history log, recovery board with decision log, close dialog and summary. | One full payroll month can be executed, recovered and closed in the demo. Close outcomes follow 6.5. Closed occurrences are read-only. Every recovery action appears in the decision log. |
+| **M8 · Occurrence, Recovery mode, close-out** | Occurrence workspace, task timeline and table, history log, recovery board with decision log, close dialog and summary. | One full payroll month can be executed, recovered and closed in the demo. Close outcomes follow 6.5 using each essential task's `dueAt` and `resolvedAt`; scenarios R1–R11 (7.1) pass against the real playbooks. Payroll task 9 (+2 WD) and task 10 (+4 WD) are completed after the cut-off, and the occurrence still closes `completed` when each is on time. A report can be delivered while HR Reporting task 6 (post-dispatch review, +1 WD) is open; task 7's note reads "Not reviewed at dispatch" and task 6 is then completed normally. HR Reporting task 8 (+2 WD) can be completed with "No issues identified". Self-check exceptions appear as "Four-eyes control not completed" in the close-out summary. Closed occurrences are read-only. Every recovery action appears in the decision log. |
 | **M9 · People, responsive and accessibility, docs** | People view, cover dialog, unassigned queue. Responsive pass at the four breakpoints. Accessibility pass (keyboard, focus, contrast, labels). Update README, PRODUCT_BRIEF, PROCESS_MODEL, DATA_AND_PRIVACY. | Browser review on desktop, tablet and phone in both themes. Text contrast ≥ 4.5:1. All actions keyboard-operable. Docs describe only implemented behaviour. |
 
 **Ordering rationale:** the identity ships first so every later PR can be reviewed visually. The model, calendar and engine (M1–M4) come before screens, because incorrect deadlines would undermine every screen built on them.
@@ -844,67 +923,112 @@ Each milestone is **one pull request** from its own branch off the latest `main`
 
 Offsets are relative to the anchor and follow the counting conventions in 6.2a.
 
-> **DRAFT — HR REVIEW REQUIRED BEFORE IMPLEMENTATION.**
-> A.2 and A.3 are draft assumptions for a synthetic organisation. They are not validated processes or universal standards. Everything in these tables is an assumption: anchor rule, lead time, windows, task list, offsets, owners, contributors, criticality, effort, dependencies and fallbacks. That applies especially to the columns marked †. Nothing in A.2 or A.3 is implemented until you have reviewed it and the reviewed version has been written back into this document. Until then, M0–M4 use only the Training Session playbook and neutral test fixtures.
+> **REVISED WITH HR DECISIONS (04.11.2026) — PENDING FINAL HR SIGN-OFF.**
+> A.2 and A.3 describe a synthetic organisation. They are not validated processes or universal standards. The HR decisions D13–D25 have been incorporated. Values not covered by those decisions remain assumptions, in particular lead times, windows, effort and the columns marked †. Nothing in A.2 or A.3 is implemented until you have signed off this consolidated version and the sign-off is recorded below (D11, Appendix C #1). Until then, M0–M4 use only the Training Session playbook and neutral test fixtures.
 
 Review status:
 
 | Playbook | Status | Reviewer |
 |---|---|---|
 | A.1 Training Session | Existing and in use; mapping only | — |
-| A.2 Monthly Payroll Input Coordination | **Draft, not reviewed** | You (HR) |
-| A.3 Monthly HR Reporting | **Draft, not reviewed** | You (HR) |
+| A.2 Monthly Payroll Input Coordination | **Revised with HR decisions (D13–D16, D19–D21, D25) — pending final HR sign-off** | You (HR) |
+| A.3 Monthly HR Reporting | **Revised with HR decisions (D17–D19, D22–D25) — pending final HR sign-off** | You (HR) |
+
+**Applies to A.2 and A.3:** every completion criterion maps to an essential task, so the close-out outcome (6.5) enforces it. Tasks with a positive offset are post-anchor tasks under 7 (item 4): they are tracked against their own due time, appear only in "After the anchor" in Recovery mode, and must be resolved before the occurrence can close as `completed` or `completed-late`. Day-based offsets without a stated time use the anchor time.
 
 ### A.1 Training Session (v2, event-start)
 Anchor "Training starts". Lead time 7 days. Attention 24 h, recovery 60 min. The seven existing tasks are unchanged (trainer, participants, room, IT setup, reminder, materials, attendance follow-up), with offsets converted to minutes and responsibilities mapped as in 11.3.
 
-### A.2 Monthly Payroll Input Coordination (v1, deadline) — DRAFT
+### A.2 Monthly Payroll Input Coordination (v1, deadline) — REVISED, PENDING FINAL HR SIGN-OFF
 
-Area PC. All values below are draft assumptions:
+Area PC. Provider-neutral (D13). The Hub coordinates and records the process. It does not calculate payroll or determine legal treatment (D14).
 
-| Parameter | Draft assumption | To confirm |
+> **Privacy (4.5).** The Hub never receives individual payroll correction details, salary or payment figures, employee names, personnel numbers or other individual identifiers, absence reasons, diagnoses or other health information. Aufrollung items, open HRIS checks and corrections are kept in the payroll provider's or the HRIS's register, each with its named owner there. The Hub records only an aggregated status, for example "2 joiner changes carried forward to next month's Aufrollung". "Record" in the table below always means this.
+
+| Parameter | Value | To confirm |
 |---|---|---|
-| Anchor | "Provider cut-off", configured using the actual provider-specific date rule and time | Configure the provider's actual cut-off; no universal formula or fixed time is assumed. Adjust individual occurrences when a provider calendar differs. |
-| Lead time | 15 working days | When the cycle should start |
-| Attention / recovery window | 1 / 2 working days | When the team needs warning |
-| Owner / backup | HR Generalist / HR Operations Specialist | Who is accountable and who covers |
-| Completion criteria | Input file handed over by cut-off; collected changes reconciled; post-cut-off or otherwise late payroll-relevant items recorded for following month's payroll run as an Aufrollung with an owner and follow-up; provider pre-payroll checks reviewed and open corrections documented | What "done" means |
+| Anchor | "Provider cut-off": the configured provider's actual date rule and time, set per operation. An individual occurrence can be moved when the provider calendar differs, without changing the recurring schedule (6.5). The demo uses a fictional provider (Appendix B). | No universal formula or fixed time is assumed. |
+| Lead time | 15 working days | Assumption: when the cycle should start |
+| Attention / recovery window | 1 / 2 working days | Assumption: when the team needs warning |
+| Owner / backup | HR Generalist / HR Operations Specialist. A backup is required for recurring operations (5.1) because it is the default four-eyes reviewer. | Confirmed role split (D15) |
+
+**Completion criteria**
+
+1. Input file handed over to the provider by the configured cut-off (task 8).
+2. Payroll input reconciled against approved source inputs through a genuine four-eyes check by an independent reviewer, or through the documented self-check exception recorded as "Four-eyes control not completed" and escalated (task 7, 5.5).
+3. HRIS validation status recorded, with open checks recorded as high-level follow-ups (task 5).
+4. Payroll-relevant time and absence inputs confirmed (task 6).
+5. Provider pre-payroll check report reviewed, or the provider's alternative validation, or the fact that no such report is supplied, confirmed and documented (task 9).
+6. Late and post-cut-off inputs and open corrections prepared for the following month's payroll run as an Aufrollung (task 10).
+7. Urgent exceptions escalated with the provider and noted (tasks 2–4 and 8–10; escalation notes in the decision log).
+8. Each outstanding follow-up has a named owner in the external source register (task 10).
 
 | # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Send input request for the period | −12 WD | Owner | Line managers, Sales Ops | important | 20 | — | Send a short plain reminder with the cut-off date |
-| 2 | Collect employee changes (joiners, leavers, changes) | −8 WD | Owner | — | essential | 60 | — | Use the HR change log as of today; record any omitted payroll-impacting change for following month's payroll run as an Aufrollung; escalate urgent exceptions |
-| 3 | Collect variable pay inputs | −6 WD | Sales Ops | — | essential | 30 | 1 | Record missing inputs for following month's payroll run as an Aufrollung under the provider's process; escalate urgent exceptions |
-| 4 | Collect overtime and allowance approvals | −5 WD | Line managers | — | essential | 40 | 1 | Submit approved items only; record outstanding approved items for following month's payroll run as an Aufrollung; escalate urgent exceptions |
-| 5 | Verify approved master-data changes in the HRIS | −4 WD | Owner | — | essential | 45 | 2 | Verify each approved payroll-relevant change against the HRIS entry, including its effective date and treatment in the correct payroll period. Record only the check status and open follow-up items in the Hub, not personal change details. If time is constrained, prioritise high-impact changes (joiners and leavers), log the remaining checks as open, and follow them up; record payroll-impacting omissions for the following month's payroll run as an Aufrollung where appropriate |
-| 6 | Confirm payroll-relevant time and absence inputs from approved system outputs | −3 WD | Owner | — | important | 20 | 2 | Record unresolved payroll-relevant inputs for following month's payroll run as an Aufrollung; do not record absence reasons, diagnoses or medical details |
-| 7 | Independently reconcile payroll input against approved source inputs (four-eyes check) | −2 WD | Backup (default; may be reassigned to another qualified HR person) | — | essential | 45 | 2, 3, 4, 5, 6 | If no independent reviewer is available by cut-off, the owner performs and documents a self-check as an exception; record that the four-eyes control was not completed and escalate according to internal policy |
-| 8 | Hand over input file to payroll provider | 0 WD 12:00 | Owner | External payroll provider | essential | 15 | 7 | Record any payroll-relevant item not accepted before cut-off for following month's payroll run as an Aufrollung; escalate urgent exceptions under the provider's process |
-| 9 | Review provider's pre-payroll check report | +2 WD | Owner | External payroll provider | important | 30 | 8 | Record unresolved corrections for following month's payroll run as an Aufrollung where an in-period correction is not agreed; escalate urgent or material errors with the provider |
-| 10 | Consolidate late inputs and corrections for the following month's payroll Aufrollung | +4 WD | Owner | — | essential | 30 | 2, 3, 4, 5, 6, 9 | Keep unresolved items in a carry-forward register with a named owner and next-period follow-up; escalate items not accepted by the provider |
+| 2 | Collect employee changes (joiners, leavers, changes) | −8 WD | Owner | — | essential | 60 | — | Use the HR change log as of today; record omitted payroll-impacting changes for the following month's Aufrollung; escalate urgent exceptions |
+| 3 | Collect variable pay inputs | −6 WD | Sales Ops | — | essential | 30 | 1 | Applied by the owner: record missing inputs for the following month's Aufrollung under the provider's process; escalate urgent exceptions |
+| 4 | Collect overtime and allowance approvals | −5 WD | Line managers | — | essential | 40 | 1 | Applied by the owner: submit approved items only; record outstanding approved items for the following month's Aufrollung; escalate urgent exceptions |
+| 5 | Verify each approved payroll-relevant master-data change against the HRIS entry, including its effective date and treatment in the correct payroll period (D16) | −4 WD | Owner | — | essential | 45 | 2 | If time is constrained, prioritise high-impact changes (joiners and leavers), record the remaining checks as open and follow them up; record payroll-impacting omissions for the following month's Aufrollung where appropriate |
+| 6 | Confirm payroll-relevant time and absence inputs from approved system outputs | −3 WD | Owner | — | essential | 20 | 2 | Record unresolved inputs for the following month's Aufrollung; escalate urgent exceptions. Never record absence reasons, diagnoses or medical details |
+| 7 | Independently reconcile payroll input against approved source inputs (four-eyes check) | −2 WD | Backup (default; may be reassigned to another qualified HR person) | — | essential | 45 | 2, 3, 4, 5, 6 | Self-check exception (5.5): if no independent reviewer is available by the cut-off, the owner performs and documents a self-check. The completion note begins "Four-eyes control not completed"; escalate according to internal policy |
+| 8 | Hand over input file to payroll provider | 0 WD (configured cut-off time) | Owner | External payroll provider | essential | 15 | 7 | Record any item not accepted before the cut-off for the following month's Aufrollung; escalate urgent exceptions under the provider's process |
+| 9 | Review the provider's pre-payroll check report, or confirm the provider's alternative validation or that no such report is supplied | +2 WD | Owner | External payroll provider | essential | 30 | 8 | Record unresolved corrections for the following month's Aufrollung where no in-period correction is agreed; escalate urgent or material errors with the provider |
+| 10 | Consolidate late inputs and corrections for the following month's payroll Aufrollung | +4 WD | Owner | — | essential | 30 | 2, 3, 4, 5, 6, 9 | Keep unresolved items in the external register (provider or HRIS) with a named owner and next-period follow-up; note only the aggregated status in the Hub; escalate items not accepted by the provider |
 
-### A.3 Monthly HR Reporting (v1, deadline) — DRAFT
+**Task 7 four-eyes guard (D15, D21, 5.5):** `independence: { of: ["8"], selfCheckFallback: true }`. The preparer is the person who assembles and hands over the payroll input, defined as task 8's effective responsible at handover. Task 7's effective reviewer must be a different person. Both are compared as effective responsibility, including coverage and reassignment. If both resolve to the same person, task 7 cannot be recorded as a four-eyes control; only the documented self-check exception is possible, and it is never labelled as a completed four-eyes control.
 
-Area RW. All values below are draft assumptions:
+**Task 9 (D20):** stays essential with every provider. Where the provider issues no pre-payroll check report, the task is completed with a documented confirmation of the provider's alternative validation process, or that no such report is supplied.
 
-| Parameter | Draft assumption | To confirm |
+**Post-anchor tasks:** tasks 9 (+2 WD) and 10 (+4 WD) are essential follow-ups after the cut-off (D19). Demo provider sample, November 2026 (cut-off Mon 23.11.2026 12:00): task 7 due Thu 19.11., task 8 Mon 23.11. 12:00, task 9 Wed 25.11. 12:00, task 10 Fri 27.11. 12:00.
+
+### A.3 Monthly HR Reporting (v1, deadline) — REVISED, PENDING FINAL HR SIGN-OFF
+
+Area RW. Coordination playbook (D17). The Hub does not calculate or store headcount, FTE, joiner/leaver, turnover or other report values. Figures are prepared in the organisation's reporting tools outside the Hub. Notes follow 4.5.
+
+| Parameter | Value | To confirm |
 |---|---|---|
 | Anchor | "Report delivery", rule `nthWorkingDay(3)` with `anchorPeriodOffset: 1` (delivered in the month after the reporting month), 10:00 | Agreed delivery date and recipients |
-| Lead time | 3 working days | When preparation should start |
-| Attention / recovery window | 1 / 1 working day | When the team needs warning |
-| Owner / backup | HR Generalist / HR Coordinator | Who is accountable and who covers |
-| Completion criteria | Report delivered to the agreed recipients; identified data issues recorded for follow-up; Head of HR review completed or explicitly marked pending at dispatch | What "done" means |
+| Data availability | HRIS month-end data is normally available on the second working day at 09:00 (D24). With the default rule this is the working day before delivery (−1 WD). | Confirmed |
+| Lead time | 3 working days | Assumption: when preparation should start |
+| Attention / recovery window | 1 / 1 working day | Assumption: when the team needs warning |
+| Owner / backup | HR Generalist / HR Coordinator. The backup is the default aggregate validator (task 2); a backup is required for recurring operations (5.1). | Confirmed validator default (D24) |
+
+**Completion criteria**
+
+1. Report delivered to the agreed recipients by the agreed deadline (task 7).
+2. Cost-centre mapping confirmed by Finance & Controlling, or the previous month's mapping used, clearly flagged in the report and retained as an open follow-up (task 3).
+3. Head of HR review completed, after dispatch if necessary. A report sent before the review is marked "Not reviewed at dispatch" (tasks 6 and 7).
+4. Identified data issues logged as high-level follow-ups, or "No issues identified" recorded (task 8).
+5. Every open follow-up has a named owner in the external source system (tasks 3 and 8).
 
 | # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
-| 1 | Extract HRIS data after month-end close | −2 WD 09:00 | Owner | — | essential | 30 | — | Use the last validated extract and mark the date |
-| 2 | Validate aggregate headcount and FTE against previous month | −2 WD 15:00 | HR Coordinator | — | essential | 45 | 1 | Validate aggregate totals using the organisation's agreed definitions; flag unexplained or material variances for follow-up using an organisation-defined threshold where one exists. No universal percentage threshold is assumed |
-| 3 | Confirm cost-centre mapping | −1 WD 12:00 | Finance & Controlling | — | essential | 20 | 1 | Use previous month's mapping and flag it in the report |
-| 4 | Prepare joiner, leaver and turnover figures from validated reporting data | −1 WD 16:00 | Owner | — | important | 40 | 2 | Prepare and report available joiner and leaver figures; mark turnover as unavailable where the validated source data or agreed definition is not ready |
-| 5 | Prepare report pack and commentary | 0 WD 08:00 | Owner | — | essential | 60 | 3, 4 | Send tables without commentary |
-| 6 | Review report by Head of HR (important, non-blocking) | 0 WD 09:00 | Head of HR | — | important | 20 | 5 | If review is still pending at dispatch, the owner may deliver the report marked "Not reviewed" and record the outstanding review. This task is not a prerequisite for task 7 |
-| 7 | Deliver report to recipients | 0 WD 10:00 | Owner | — | essential | 10 | 5 | Deliver at the agreed deadline even if task 6 remains pending; mark the report "Not reviewed" and record the open review follow-up |
-| 8 | Log identified data issues for HRIS correction (if any) | +2 WD | Owner | HR system vendor | optional | 15 | 7 | Record each identified issue as a high-level follow-up with an owner; do not copy report values or employee-level details into the Hub |
+| 1 | Extract HRIS data after month-end close (available from the second working day, 09:00) | −1 WD 09:00 | Owner | — | essential | 30 | — | Use the last validated extract and mark its date in the report |
+| 2 | Validate aggregate headcount and FTE against the previous month | −1 WD 12:00 | Backup (default; another qualified HR person may be assigned; a named person is required if no backup exists) | — | essential | 45 | 1 | Performed by the independent validator: validate aggregate totals only, using the organisation's agreed definitions; flag unexplained or material variances for follow-up using an organisation-defined threshold where one exists. No universal percentage threshold is assumed |
+| 3 | Confirm cost-centre mapping | −1 WD 12:00 | Finance & Controlling | — | essential | 20 | 1 | Applied by the owner, not by Finance: use the previous month's mapping, flag it in the report as "Previous month's cost-centre mapping, not confirmed by Finance & Controlling" and retain the unconfirmed mapping as an open high-level follow-up. Using the fallback does not mean Finance has confirmed the mapping |
+| 4 | Coordinate joiner, leaver and turnover figures prepared from validated reporting data (the Hub does not calculate metrics) | −1 WD 16:00 | Owner | — | important | 40 | 2 | Report the available joiner and leaver figures; mark turnover as unavailable where the validated source data or agreed definition is not ready |
+| 5 | Prepare report pack and commentary | 0 WD 09:00 | Owner | — | essential | 60 | 2, 3, 4 | Send tables without commentary |
+| 6 | Review report by Head of HR (essential, non-blocking) | +1 WD (anchor time) | Head of HR (named person; seed: Katrin Mayr) | — | essential | 20 | 5 | None. May be completed before dispatch. Not a prerequisite of task 7. If pending at dispatch it stays open and is completed normally after dispatch, with its actual completion time |
+| 7 | Deliver report to recipients | 0 WD 10:00 | Owner | — | essential | 10 | 5 | None. If task 6 is open at delivery, the completion note reads "Not reviewed at dispatch". This is the normal delivery path, not a fallback |
+| 8 | Log identified data issues for correction in the source system, or record "No issues identified" | +2 WD | Owner | — | essential | 15 | 7 | None. With issues, record only a privacy-safe high-level follow-up note; the detailed register stays in the HRIS or other source system. The HR system vendor is contacted only when an actual system defect needs vendor support |
+
+**Task 2 independence (D24, 5.5):** `independence: { of: ["5"], selfCheckFallback: false }`. The validator must be a different effective person from the report preparer (task 5), including coverage and reassignment. The fallback is still performed by the independent validator. No self-validation exception is defined (Appendix C).
+
+**Task 6 and task 7 (D22):** task 7 depends only on task 5 and can be completed while task 6 is open. Task 6 has no fallback, so nothing marks the review as completed except the review itself.
+
+**Task 5 timing:** due 09:00 on the delivery day. Its 60-minute effort fits 08:00–09:00 within the configured working hours.
+
+**Sample cycle: October 2026, report due Wed 04.11.2026 10:00** (6.2b T6). 01.11.2026 is a Sunday and a public holiday, so Mon 02.11. is the first working day of November and Tue 03.11. the second.
+
+| Date | Position | Tasks |
+|---|---|---|
+| Fri 30.10.2026 | −3 WD | Occurrence becomes active (lead time) |
+| Mon 02.11.2026 | −2 WD, 1st working day | — (month-end close in the HRIS) |
+| Tue 03.11.2026 | −1 WD, 2nd working day; HRIS data available 09:00 | 1 at 09:00 · 2 at 12:00 · 3 at 12:00 · 4 at 16:00 |
+| Wed 04.11.2026 | 0 WD, anchor (3rd working day) | 5 at 09:00 · 7 at 10:00 |
+| Thu 05.11.2026 | +1 WD | 6 at 10:00 (may be completed earlier) |
+| Fri 06.11.2026 | +2 WD | 8 at 10:00 |
 
 ---
 
@@ -913,8 +1037,9 @@ Area RW. All values below are draft assumptions:
 - **People:** Sophie Lang (HR Generalist, simulated current user), Daniel Hofer (HR Operations Specialist), Lena Gruber (HR Coordinator), Katrin Mayr (Head of HR). All fictional.
 - **Counterparties:** Finance & Controlling, Sales Operations, Line managers, IT Service Desk (contact Jonas Weber), Facilities (contact Mara Klein), External payroll provider, HR system vendor, Works council, External trainer (contact Alex Morgan). All fictional.
 - **Operations:**
-  - Monthly payroll input (owner Sophie, backup Daniel). Last three periods closed: on time, late (recovery used), on time. Current period active with variable pay inputs *Waiting on Sales Ops* and one overtime approval overdue.
-  - Monthly HR reporting (owner Sophie, backup Lena). Two previous periods closed on time. Current period due within 2 working days, cost-centre mapping *Waiting on Finance & Controlling*.
+  - Monthly payroll input (owner Sophie, backup Daniel). Provider cut-off configured for a **fictional demo provider**: `workingDaysBeforeMonthEnd(5)` at 12:00. This is demo configuration only, not a universal payroll rule (D13); it is editable like any schedule and individual occurrences can be moved. The engine fixtures in 6.2a and 6.2b use the same fictional provider. Last three periods closed: on time, late (recovery used), on time. Current period active with variable pay inputs *Waiting on Sales Ops* and one overtime approval overdue.
+  - Monthly HR reporting (owner Sophie, backup Lena, who is the default aggregate validator). Two previous periods closed on time. Current period due within 2 working days, cost-centre mapping *Waiting on Finance & Controlling*.
+  - All seeded notes are privacy-safe aggregated status notes (4.5), e.g. "2 joiner changes carried forward".
   - Training "Leading through change" (one-off, starts 45 minutes after seeding: the existing rescue scenario).
   - Training "Excel essentials for managers" (one-off, in 4 days, partly prepared).
   - Training "HR systems refresher" (one-off, closed 5 days ago).
@@ -929,7 +1054,12 @@ Area RW. All values below are draft assumptions:
 
 ## Appendix C · Open points for review
 
-1. **Appendix A.2 and A.3 (blocking for M5):** anchor rules, lead times, windows, task lists, offsets, owners, contributors and fallbacks are draft assumptions requiring your HR review.
+1. **Appendix A.2 and A.3 (blocking for M5): revised with HR decisions, pending final HR sign-off.** Decisions D13–D25 (04.11.2026) and the independent audit findings are incorporated. M5 stays blocked and D11 stays in force until you have reviewed this consolidated v1.2 and explicitly approved it. Lead times, windows and effort remain assumptions. Points to confirm with the sign-off:
+   - a. **A.3 task 1 timing:** it is due at 09:00 on the second working day, the same moment the HRIS data becomes available, with 30 minutes of effort. It will usually be completed a little after its due time and count as late. Confirm, or move the due time (for example to 10:00).
+   - b. **A.3 task 2 without an exception:** no self-validation exception is defined. If no independent HR person is available, task 2 stays open and the occurrence can only close as `missed`. Confirm, or define an exception similar to A.2 task 7.
+   - c. **A.3 task 2 scope:** independence is checked against the report preparer (task 5). Confirm whether the person who extracts the data (task 1) should also be excluded.
+   - d. **Late review outcome:** under 6.5, a Head of HR review completed after its +1 WD due time makes the occurrence `completed-late`, even when the report itself was delivered on time. Confirm.
+   - e. **A.3 task 5 dependencies:** task 5 now depends on task 2 directly as well as on tasks 3 and 4, so skipping the important task 4 cannot bypass the essential validation. Confirm.
 2. **Public-holiday seed (blocking for marking it verified):** check the 2026–2027 dates in 6.1 against § 7 Abs. 2 ARG in RIS. M2 can be merged with the list unverified, but the warning stays visible until you confirm it.
 3. **Resolved demo working-time defaults (04.11.2026):** Monday–Friday, 08:00–12:00 and 13:00–17:00 (eight effective hours, with a non-working lunch break from 12:00–13:00). The working week and intervals remain configurable in the app.
 4. **Resolved demo company closures (04.11.2026):** seed 24.12.2026 and 31.12.2026 as individually removable company-specific closures. They must not be represented as Austrian statutory public holidays.
