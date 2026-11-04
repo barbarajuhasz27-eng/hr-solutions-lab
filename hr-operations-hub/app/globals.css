@@ -814,13 +814,19 @@ code { font-size: 12px; }
 
 /* ---------------------------------------------------------------- Breakpoints (8.4) */
 
-/* Single 48 px row from 1440 px: compact labels until 1600 px so all elements fit without overlap. */
+/* Single 48 px row from 1280 px (8.4): compact labels until 1600 px so all elements fit without overlap. */
 @media (max-width: 1599px) {
   .product-name, .clock-date, .label-extra { display: none; }
 }
 
-/* Below 1440 px the exception strip and user chip move to a second row under the 48 px bar. */
-@media (max-width: 1439px) {
+/* 1280–1439: still one row, with tighter spacing between the top-bar groups and nav links. */
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .top-bar { column-gap: var(--s4); }
+  .nav-link { padding: 0 10px; }
+}
+
+/* Below 1280 px the exception strip and user chip move to a second row under the 48 px bar. */
+@media (max-width: 1279px) {
   .top-bar {
     grid-template-columns: auto 1fr auto;
     grid-template-areas: "mark nav tools" "strip strip user";

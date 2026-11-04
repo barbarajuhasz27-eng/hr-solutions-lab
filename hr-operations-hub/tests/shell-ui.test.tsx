@@ -363,6 +363,12 @@ describe("Themes", () => {
     expect(css).not.toMatch(/\[data-theme="light"\][^{]*\.recovery-mode/);
   });
 
+  it("keeps the top bar in one row from 1280 px and only stacks the strip below 1280 px (8.4)", () => {
+    expect(block(".top-bar")).toContain(`grid-template-areas: "mark nav strip tools user"`);
+    const stacked = [...css.matchAll(/@media \(max-width: (\d+)px\) \{\s*\.top-bar \{[^}]*"strip strip user"/g)].map((match) => Number(match[1]));
+    expect(stacked).toEqual([1279]);
+  });
+
   it("follows the visual exclusions: no Inter, no teal accent, no warm cream, no oversized radii", () => {
     expect(css).not.toMatch(/\bInter\b/);
     expect(css.toLowerCase()).not.toMatch(/#376d68|#f5f4f0|#d8e7e2/);
