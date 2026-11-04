@@ -53,7 +53,7 @@ The prototype does not book rooms, send real messages or configure IT. It helps 
 - [Process model](./docs/PROCESS_MODEL.md)
 - [Data model and privacy boundaries](./docs/DATA_AND_PRIVACY.md)
 - [Build brief for Claude / Cursor](./CLAUDE_BUILD_PROMPT.md)
-- [Operations Management specification (v1.4, revised with HR decisions, pending final sign-off)](./docs/OPERATIONS_SPEC.md)
+- [Operations Management specification (v1.4, Appendix A.2 and A.3 approved by the HR owner on 04.11.2026)](./docs/OPERATIONS_SPEC.md)
 
 ## Technology direction
 
