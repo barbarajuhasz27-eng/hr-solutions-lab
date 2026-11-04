@@ -23,6 +23,7 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D10 | Working-day counting conventions are defined precisely (6.2a) and pinned by expected-date tests. | Review of v1.0 |
 | D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. | Review of v1.0 |
 | D12 | Demo working-time defaults are **Monday–Friday, 08:00–12:00 and 13:00–17:00** (eight effective working hours with a one-hour lunch break). Demo company closures are **24.12. and 31.12.**, seeded as removable company-specific closures, never statutory public holidays. All defaults remain configurable. | User confirmation, 04.11.2026 |
+| D13 | Monthly Payroll Input Coordination is **provider-neutral**. No universal cut-off rule is assumed; the provider's actual cut-off date and time are configured for the operation and may be adjusted for an individual occurrence without changing the recurring schedule. | User confirmation, 04.11.2026 |
 
 ---
 
@@ -858,7 +859,7 @@ Area PC. All values below are draft assumptions:
 
 | Parameter | Draft assumption | To confirm |
 |---|---|---|
-| Anchor | "Provider cut-off", rule `workingDaysBeforeMonthEnd(5)`, 12:00 | Real cut-off rule and time agreed with the provider |
+| Anchor | "Provider cut-off", configured using the actual provider-specific date rule and time | Configure the provider's actual cut-off; no universal formula or fixed time is assumed. Adjust individual occurrences when a provider calendar differs. |
 | Lead time | 15 working days | When the cycle should start |
 | Attention / recovery window | 1 / 2 working days | When the team needs warning |
 | Owner / backup | HR Generalist / HR Operations Specialist | Who is accountable and who covers |
