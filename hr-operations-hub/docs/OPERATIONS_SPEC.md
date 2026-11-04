@@ -27,6 +27,7 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D14 | When a payroll-relevant input misses the cut-off or a correction is identified after handover, the demo workflow records it for **following month's payroll run as an Aufrollung** (retroactive payroll adjustment), following the configured provider's process. Urgent exceptions are escalated rather than silently deferred. The Hub tracks the coordination; it does not calculate payroll or determine legal treatment. | User's HR experience, 04.11.2026 |
 | D15 | Payroll input reconciliation is a **four-eyes control**. The backup is the default second reviewer, but the owner may assign another qualified HR person. The reviewer must be independent of the person who prepared the payroll input. If no second reviewer is available, a documented owner self-check is an exception and must not be labelled as a completed four-eyes control. | User confirmation, 04.11.2026 |
 | D16 | HRIS master-data validation checks each approved, payroll-relevant change against the actual HRIS entry, including its effective date and payroll-period treatment. The Hub records only the check status and open follow-up items, never the personal change details. | User confirmation, 04.11.2026 |
+| D17 | Monthly HR Reporting is a **coordination playbook**, not an analytics engine. The Hub does not calculate headcount, FTE, joiner/leaver or turnover metrics and does not store report values or employee-level data. The Head of HR review is important but **does not block delivery**; if it is still pending at dispatch, the owner may send the report marked 'Not reviewed' and record the outstanding review. No universal percentage threshold is assumed for data variances. | User confirmation, 04.11.2026 |
 
 ---
 
@@ -891,18 +892,18 @@ Area RW. All values below are draft assumptions:
 | Lead time | 3 working days | When preparation should start |
 | Attention / recovery window | 1 / 1 working day | When the team needs warning |
 | Owner / backup | HR Generalist / HR Coordinator | Who is accountable and who covers |
-| Completion criteria | Report delivered to the agreed recipients; data issues logged | What "done" means |
+| Completion criteria | Report delivered to the agreed recipients; identified data issues recorded for follow-up; Head of HR review completed or explicitly marked pending at dispatch | What "done" means |
 
 | # | Task | Offset † | Responsible † | Contributor † | Crit. | Effort | Depends on | Fallback † |
 |---|---|---|---|---|---|---|---|---|
 | 1 | Extract HRIS data after month-end close | −2 WD 09:00 | Owner | — | essential | 30 | — | Use the last validated extract and mark the date |
-| 2 | Validate headcount and FTE against previous month | −2 WD 15:00 | HR Coordinator | — | essential | 45 | 1 | Validate totals only, explain deviations > 2 % |
+| 2 | Validate aggregate headcount and FTE against previous month | −2 WD 15:00 | HR Coordinator | — | essential | 45 | 1 | Validate aggregate totals using the organisation's agreed definitions; flag unexplained or material variances for follow-up using an organisation-defined threshold where one exists. No universal percentage threshold is assumed |
 | 3 | Confirm cost-centre mapping | −1 WD 12:00 | Finance & Controlling | — | essential | 20 | 1 | Use previous month's mapping and flag it in the report |
-| 4 | Calculate joiners, leavers and turnover | −1 WD 16:00 | Owner | — | important | 40 | 2 | Report joiners and leavers without turnover rate |
+| 4 | Prepare joiner, leaver and turnover figures from validated reporting data | −1 WD 16:00 | Owner | — | important | 40 | 2 | Prepare and report available joiner and leaver figures; mark turnover as unavailable where the validated source data or agreed definition is not ready |
 | 5 | Prepare report pack and commentary | 0 WD 08:00 | Owner | — | essential | 60 | 3, 4 | Send tables without commentary |
-| 6 | Review by Head of HR | 0 WD 09:00 | Head of HR | — | important | 20 | 5 | Deliver with "not yet reviewed" note |
-| 7 | Deliver report to recipients | 0 WD 10:00 | Owner | — | essential | 10 | 5 | — |
-| 8 | Log data issues for HRIS correction | +2 WD | Owner | HR system vendor | optional | 15 | 7 | — |
+| 6 | Review report by Head of HR (important, non-blocking) | 0 WD 09:00 | Head of HR | — | important | 20 | 5 | If review is still pending at dispatch, the owner may deliver the report marked "Not reviewed" and record the outstanding review. This task is not a prerequisite for task 7 |
+| 7 | Deliver report to recipients | 0 WD 10:00 | Owner | — | essential | 10 | 5 | Deliver at the agreed deadline even if task 6 remains pending; mark the report "Not reviewed" and record the open review follow-up |
+| 8 | Log identified data issues for HRIS correction (if any) | +2 WD | Owner | HR system vendor | optional | 15 | 7 | Record each identified issue as a high-level follow-up with an owner; do not copy report values or employee-level details into the Hub |
 
 ---
 
