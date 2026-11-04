@@ -22,6 +22,7 @@ This document consolidates the Phase 1 redesign proposal and the decisions taken
 | D9 | The **working week, daily working hours, public holidays and company closures are all configurable**. Nothing is hard-coded. Working-day calculations (dates) and working-hour calculations (time budgets) are separate. | Review of v1.0 |
 | D10 | Working-day counting conventions are defined precisely (6.2a) and pinned by expected-date tests. | Review of v1.0 |
 | D11 | The payroll and reporting playbooks in Appendix A are **draft assumptions**. They are not implemented until you have reviewed them. | Review of v1.0 |
+| D12 | Demo working-time defaults are **Monday–Friday, 08:00–12:00 and 13:00–17:00** (eight effective working hours with a one-hour lunch break). Demo company closures are **24.12. and 31.12.**, seeded as removable company-specific closures, never statutory public holidays. All defaults remain configurable. | User confirmation, 04.11.2026 |
 
 ---
 
@@ -263,9 +264,10 @@ type ISOWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;      // 1 = Monday
 interface WorkCalendar {
   timeZone: "Europe/Vienna";
   workingWeek: ISOWeekday[];                          // default [1, 2, 3, 4, 5]
-  workingHours: Partial<Record<ISOWeekday, { start: string; end: string }>>;
-                                                      // "HH:mm" local, one span per working weekday,
-                                                      // default 08:00–17:00 Mon–Fri (configurable)
+  workingHours: Partial<Record<ISOWeekday, { start: string; end: string }[]>>;
+                                                      // "HH:mm" local; one or more ordered, non-overlapping
+                                                      // working intervals per weekday. Breaks are gaps.
+                                                      // Demo default Mon–Fri: 08:00–12:00, 13:00–17:00.
   publicHolidays: {
     date: ISODate; name: string;
     source: string;                                   // e.g. "ARG § 7 Abs. 2"
@@ -412,7 +414,7 @@ Working hours are a **separate layer** from working days, with their own module 
 | `lib/calendar/working-days.ts` | Is this date a working day? Which date is n working days before or after? | Schedule anchors (6.2), task due dates (6.3), working-day windows (7) | Times of day, working hours |
 | `lib/calendar/working-hours.ts` | How many working minutes lie between two instants? | Recovery effort budget and "time left" countdowns (7, 9.6) | It asks `working-days` whether a date is working, but does not define it |
 
-- Working hours are configured per working weekday (`workingHours`). The default is 08:00–17:00, Monday to Friday, with no break deduction. It can be changed in Calendar → Working time.
+- Working hours are configured per working weekday (`workingHours`) as one or more ordered, non-overlapping intervals. The demo default is Monday–Friday, 08:00–12:00 and 13:00–17:00: eight effective working hours per day, with 12:00–13:00 treated as a non-working lunch break. Both intervals and the working week can be changed in Calendar → Working time.
 - Changing working hours **never moves a deadline**. It only changes the reported time budget and the recovery grouping.
 - A due time outside working hours is allowed. The 12:00 payroll cut-off is a date-and-time fact, not a working-hours calculation.
 - If a working weekday has no hours configured, it contributes zero working minutes, and the settings panel flags it.
@@ -489,9 +491,9 @@ Working-hour tests (6.1a, separate test file):
 
 | # | From → to | Working hours | Expected working minutes |
 |---|---|---|---|
-| T18 | Fri 18.12.2026 16:00 → Mon 21.12.2026 12:00 | 08:00–17:00 Mon–Fri | 60 + 240 = **300** |
-| T19 | same | 07:00–15:30 Mon–Fri | 0 + 300 = **300**, because Friday 16:00 is already outside hours |
-| T20 | Wed 23.12.2026 09:00 → Mon 28.12.2026 12:00, closure 24.12. | 08:00–17:00 | 480 + 240 = **720** |
+| T18 | Fri 18.12.2026 16:00 → Mon 21.12.2026 12:00 | 08:00–12:00, 13:00–17:00 Mon–Fri | 60 + 240 = **300** |
+| T19 | same | 07:00–12:00, 13:00–15:30 Mon–Fri | 0 + 240 = **240**, because Friday 16:00 is outside hours; Monday contributes 08:00–12:00 |
+| T20 | Wed 23.12.2026 09:00 → Mon 28.12.2026 12:00, closure 24.12. and statutory holiday 25.12. | 08:00–12:00, 13:00–17:00 Mon–Fri | 420 + 240 = **660** |
 | T21 | any change to working hours | — | anchors and task due dates in T1–T17 are unchanged |
 
 ### 6.3 Task due dates
@@ -911,9 +913,10 @@ Area RW. All values below are draft assumptions:
   - Training "Excel essentials for managers" (one-off, in 4 days, partly prepared).
   - Training "HR systems refresher" (one-off, closed 5 days ago).
 - **Working time:**
-  - Mon–Fri, 08:00–17:00.
+  - Monday–Friday, 08:00–12:00 and 13:00–17:00 (eight effective working hours; 12:00–13:00 is a non-working lunch break).
+  - These are demo defaults only; working weekdays and daily working intervals are editable in Calendar → Working time.
   - Austrian public holidays 2026–2027 (6.1), `verified: false`.
-  - Company closures 24.12.2026 and 31.12.2026, labelled "Demo company closure", which can be removed in settings.
+  - Company closures 24.12.2026 and 31.12.2026, labelled "Demo company closure". Both are seeded as removable company-specific closures, not statutory public holidays.
 - **Unavailability:** Sophie Lang unavailable on 2 working days within the current payroll period, without hand-over yet, so the cover flow can be demonstrated.
 
 ---
@@ -922,5 +925,5 @@ Area RW. All values below are draft assumptions:
 
 1. **Appendix A.2 and A.3 (blocking for M5):** anchor rules, lead times, windows, task lists, offsets, owners, contributors and fallbacks are draft assumptions requiring your HR review.
 2. **Public-holiday seed (blocking for marking it verified):** check the 2026–2027 dates in 6.1 against § 7 Abs. 2 ARG in RIS. M2 can be merged with the list unverified, but the warning stays visible until you confirm it.
-3. **Default working time:** Mon–Fri, 08:00–17:00, no company closures pre-selected. These are defaults only and can be changed in the app. Do you want different defaults for the demo company?
-4. **Demo seed closures:** the demo company in Appendix B is seeded with 24.12. and 31.12. as company closures so that scenario D2 can be demonstrated. Confirm, or seed without them.
+3. **Resolved demo working-time defaults (04.11.2026):** Monday–Friday, 08:00–12:00 and 13:00–17:00 (eight effective hours, with a non-working lunch break from 12:00–13:00). The working week and intervals remain configurable in the app.
+4. **Resolved demo company closures (04.11.2026):** seed 24.12.2026 and 31.12.2026 as individually removable company-specific closures. They must not be represented as Austrian statutory public holidays.
