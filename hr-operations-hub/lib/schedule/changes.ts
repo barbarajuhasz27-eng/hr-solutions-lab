@@ -5,6 +5,12 @@
  * occurrences are recalculated; a started occurrence whose rule now gives another date gets a drift
  * suggestion that the user applies or keeps.
  *
+ * Drift lifecycle: an occurrence has at most one pending suggestion (`scheduleDrift` or `calendarDrift`). Every
+ * schedule or calendar change recalculates the candidate from the currently effective schedule and the current
+ * calendar together; the user always decides on the latest valid candidate. Creating, replacing and clearing a
+ * suggestion is logged (`drift-suggested`, `drift-suggestion-cleared`); recalculating to the same candidate
+ * logs nothing. Move, close and skip are rejected while a suggestion is pending (reducer).
+ *
  * Pure: every function returns a new store and throws a `DomainError` for an invalid change.
  */
 import { isIsoDate, localDateOf } from "../calendar/dates";
@@ -24,7 +30,7 @@ import type {
   StoreV3,
   WorkCalendar,
 } from "../domain/types";
-import { resolvePeriodKeyAnchor, scheduleProblems, scheduleVersions } from "./rules";
+import { resolvePeriodKeyAnchor, scheduleProblems, scheduleVersions, type PeriodAnchor } from "./rules";
 
 export interface ChangeContext {
   now: ISODateTime;
@@ -38,6 +44,61 @@ export type CalendarChange = Partial<Pick<WorkCalendar, "workingWeek" | "working
 export type DriftKind = "calendar" | "schedule";
 
 const driftField = (kind: DriftKind): "calendarDrift" | "scheduleDrift" => (kind === "calendar" ? "calendarDrift" : "scheduleDrift");
+
+/** Why a pending suggestion was withdrawn. */
+export const DRIFT_CLEAR_REASONS = ["superseded", "no-longer-different", "no-valid-candidate", "kept-earlier"] as const;
+export type DriftClearReason = (typeof DRIFT_CLEAR_REASONS)[number];
+
+/** The pending drift suggestion of an occurrence, if any. */
+export function pendingDrift(occurrence: Occurrence): { kind: DriftKind; suggested: ISODateTime } | undefined {
+  if (occurrence.scheduleDrift) return { kind: "schedule", suggested: occurrence.scheduleDrift };
+  if (occurrence.calendarDrift) return { kind: "calendar", suggested: occurrence.calendarDrift };
+  return undefined;
+}
+
+/**
+ * The date of the latest drift decision if it was Keep. A candidate the user already kept is not suggested
+ * again; an Apply decision after it ends that.
+ */
+function keptSuggestion(occurrence: Occurrence): ISODateTime | undefined {
+  for (let index = occurrence.history.length - 1; index >= 0; index -= 1) {
+    const event = occurrence.history[index];
+    if (event.kind === "drift-kept") return String(event.detail.suggested);
+    if (event.kind === "calendar-drift-applied" || (event.kind === "moved" && event.detail.reason === "schedule-changed")) return undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Reconciles the pending suggestion of a started occurrence with the latest candidate (§6.6, §6.7).
+ * - Candidate equals the current anchor, or the rule date a manual move came from: no suggestion.
+ * - Candidate already kept by the user: no suggestion.
+ * - Same candidate as the pending one: unchanged, nothing logged (whatever its source).
+ * - Otherwise the pending suggestion is cleared (logged with its reason) and the new one set (logged).
+ */
+function reconcileDrift(occurrence: Occurrence, candidate: PeriodAnchor | null, source: DriftKind, ctx: ChangeContext): Occurrence {
+  const pending = pendingDrift(occurrence);
+  let target: ISODateTime | undefined;
+  let reason: DriftClearReason;
+  if (!candidate?.ok) reason = "no-valid-candidate";
+  else if (candidate.anchorAt === occurrence.anchorAt || candidate.anchorAt === occurrence.originalAnchorAt) reason = "no-longer-different";
+  else if (candidate.anchorAt === keptSuggestion(occurrence)) reason = "kept-earlier";
+  else {
+    target = candidate.anchorAt;
+    reason = "superseded";
+  }
+  if (target === pending?.suggested) return occurrence;
+
+  let next = occurrence;
+  if (pending) {
+    const cleared = without(next, driftField(pending.kind));
+    next = { ...cleared, history: [...next.history, historyEvent(next, "drift-suggestion-cleared", ctx.now, ctx.actorId, { source: pending.kind, suggested: pending.suggested, anchorAt: occurrence.anchorAt, reason })] };
+  }
+  if (target) {
+    next = { ...next, [driftField(source)]: target, history: [...next.history, historyEvent(next, "drift-suggested", ctx.now, ctx.actorId, { source, anchorAt: occurrence.anchorAt, suggested: target })] };
+  }
+  return next;
+}
 
 function without<T extends object, K extends keyof T>(value: T, ...keys: K[]): Omit<T, K> {
   const copy = { ...value };
@@ -111,7 +172,7 @@ export function scheduleWithChange(schedule: Schedule, change: ScheduleChange, e
  * Applies a schedule change (§6.6):
  * - occurrences whose rule date is before `effectiveFrom`, and closed or skipped ones: untouched;
  * - not-started occurrences on or after `effectiveFrom`: regenerated with the new rule;
- * - started ones on or after `effectiveFrom`: kept, with `scheduleDrift` when the new rule gives another date.
+ * - started ones on or after `effectiveFrom`: kept; their suggestion is reconciled with the new candidate.
  * Later periods are generated with the new rule by the next engine step.
  */
 export function applyScheduleChange(store: StoreV3, operationId: string, change: ScheduleChange, effectiveFrom: ISODate, ctx: ChangeContext): { store: StoreV3; touched: string[] } {
@@ -133,10 +194,9 @@ export function applyScheduleChange(store: StoreV3, operationId: string, change:
       touched.push(occurrence.id);
       return regenerate(occurrence, updated, playbook, anchor.anchorAt, store.calendar, ctx, "schedule-changed");
     }
-    const drift = anchor?.ok && anchor.anchorAt !== occurrence.anchorAt ? anchor.anchorAt : undefined;
-    if (drift === occurrence.scheduleDrift) return occurrence;
-    touched.push(occurrence.id);
-    return drift ? { ...occurrence, scheduleDrift: drift } : without(occurrence, "scheduleDrift");
+    const next = reconcileDrift(occurrence, anchor, "schedule", ctx);
+    if (next !== occurrence) touched.push(occurrence.id);
+    return next;
   });
 
   return {
@@ -172,7 +232,7 @@ export function calendarWithChange(calendar: WorkCalendar, change: CalendarChang
  * Applies a work-calendar change (§6.7):
  * - working hours only: dates are not recalculated (§6.1a, T21);
  * - not-started occurrences: anchor (from the rule, unless moved manually) and task due dates recalculated;
- * - started recurring occurrences whose rule now gives another anchor: `calendarDrift` set, otherwise cleared;
+ * - started recurring occurrences: their suggestion is reconciled with the new candidate;
  * - closed and skipped occurrences: never recalculated.
  */
 export function applyCalendarChange(store: StoreV3, change: CalendarChange, ctx: ChangeContext): { store: StoreV3; touched: string[] } {
@@ -196,10 +256,9 @@ export function applyCalendarChange(store: StoreV3, change: CalendarChange, ctx:
       return occurrence.originalAnchorAt ? { ...regenerated, originalAnchorAt: occurrence.originalAnchorAt } : regenerated;
     }
     if (!operation.schedule) return occurrence;
-    const drift = ruleAnchor?.ok && ruleAnchor.anchorAt !== ruleAnchorOf(occurrence) && ruleAnchor.anchorAt !== occurrence.anchorAt ? ruleAnchor.anchorAt : undefined;
-    if (drift === occurrence.calendarDrift) return occurrence;
-    touched.push(occurrence.id);
-    return drift ? { ...occurrence, calendarDrift: drift } : without(occurrence, "calendarDrift");
+    const next = reconcileDrift(occurrence, ruleAnchor, "calendar", ctx);
+    if (next !== occurrence) touched.push(occurrence.id);
+    return next;
   });
 
   return { store: { ...store, modified: true, calendar, occurrences }, touched };

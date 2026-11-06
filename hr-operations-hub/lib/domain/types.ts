@@ -244,6 +244,9 @@ export const HISTORY_EVENT_KINDS = [
   "migrated",
   // M2: a calendar or schedule drift suggestion was reviewed and the current anchor kept (§6.6, §6.7).
   "drift-kept",
+  // M2: a drift suggestion was created, or withdrawn (superseded by a newer candidate or no longer different).
+  "drift-suggested",
+  "drift-suggestion-cleared",
 ] as const;
 export type HistoryEventKind = (typeof HISTORY_EVENT_KINDS)[number];
 

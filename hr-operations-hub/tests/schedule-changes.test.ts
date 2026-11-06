@@ -68,7 +68,7 @@ describe("§6.6 schedule change", () => {
     expect(local(november.anchorAt)).toBe("2026-11-23 12:00");
     expect(local(november.scheduleDrift)).toBe("2026-11-25 12:00");
     expect(message("schedule.drift", { date: "25.11.2026" })).toBe("Schedule changed: new rule gives 25.11.2026");
-    expect(november.history.map((event) => event.kind)).toEqual(["generated", "activated"]);
+    expect(november.history.map((event) => event.kind)).toEqual(["generated", "activated", "drift-suggested"]);
   });
 
   it("Apply new date moves the occurrence with move semantics and logs it; resolved tasks keep their due dates", () => {

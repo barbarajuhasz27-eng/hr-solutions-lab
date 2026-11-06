@@ -341,10 +341,10 @@ describe("reducer contract", () => {
     createOperation: { action: { type: "createOperation", operation: { id: "op-x", title: "X", playbookId: "training-session", ownerId: "p-sophie" }, anchorAt: "2026-11-20T09:00:00.000Z" }, event: "generated", occurrence: "op-x:once" },
     updateOwnership: { action: { type: "updateOwnership", operationId: RESCUE_OPERATION_ID, ownerId: "p-lena" }, event: null },
     setOperationStatus: { action: { type: "setOperationStatus", operationId: RESCUE_OPERATION_ID, status: "paused" }, event: null },
-    // M2. A started occurrence only gets a drift suggestion, without an event; the decision is logged.
+    // M2. A started occurrence gets a drift suggestion (logged as drift-suggested); the decision is logged too.
     advanceSchedule: { action: { type: "advanceSchedule" }, event: "generated", occurrence: CUTOFF_DEC },
-    updateSchedule: { action: { type: "updateSchedule", operationId: "op-cutoff", change: { rule: { kind: "workingDaysBeforeMonthEnd", n: 3 } }, effectiveFrom: "2026-11-01" }, event: null, occurrence: CUTOFF_NOV },
-    updateCalendar: { action: { type: "updateCalendar", change: { companyClosures: [{ date: "2026-11-30", name: "Closure" }] } }, event: null, occurrence: CUTOFF_NOV },
+    updateSchedule: { action: { type: "updateSchedule", operationId: "op-cutoff", change: { rule: { kind: "workingDaysBeforeMonthEnd", n: 3 } }, effectiveFrom: "2026-11-01" }, event: "drift-suggested", occurrence: CUTOFF_NOV },
+    updateCalendar: { action: { type: "updateCalendar", change: { companyClosures: [{ date: "2026-11-30", name: "Closure" }] } }, event: "drift-suggested", occurrence: CUTOFF_NOV },
     decideDrift: { action: { type: "decideDrift", occurrenceId: CUTOFF_NOV, kind: "calendar", decision: "keep" }, event: "drift-kept", occurrence: CUTOFF_NOV },
   };
 

@@ -36,6 +36,7 @@ import {
   applyCalendarChange,
   applyScheduleChange,
   decideDrift,
+  pendingDrift,
   rescheduleTasks,
   type CalendarChange,
   type DriftKind,
@@ -132,6 +133,12 @@ function getOpenOccurrence(state: StoreV3, id: string): Occurrence {
   const occurrence = getOccurrence(state, id);
   if (isClosed(occurrence)) throw new DomainError("occurrence-closed", id);
   return occurrence;
+}
+
+/** Move, close and skip must not silently discard a pending schedule or calendar suggestion. */
+function assertNoPendingDrift(occurrence: Occurrence): void {
+  const pending = pendingDrift(occurrence);
+  if (pending) throw new DomainError("drift-decision-required", `${occurrence.id}: ${pending.kind}`);
 }
 
 function getTask(occurrence: Occurrence, taskId: string): Task {
@@ -352,6 +359,7 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
 
     case "moveOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const anchorAt = toInstant(action.anchorAt);
       const nonWorkingDay = !isWorkingDay(state.calendar, localDateOf(anchorAt));
       if (nonWorkingDay && !action.confirmNonWorkingDay) throw new DomainError("non-working-day", localDateOf(anchorAt));
@@ -376,6 +384,7 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
 
     case "skipOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const reason = requireNote(action.reason, SKIP_REASON_MAX_LENGTH);
       return replaceOccurrence(state, {
         ...occurrence,
@@ -388,6 +397,7 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
 
     case "closeOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const operation = getOperation(state, occurrence.operationId);
       if (action.outcome === "cancelled" && operation.schedule !== null) throw new DomainError("cancel-one-off-only");
       if (!closeOptions(occurrence, operation).includes(action.outcome)) {

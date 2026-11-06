@@ -34,6 +34,7 @@ export const DOMAIN_ERROR_CODES = [
   "non-working-day",
   "no-drift",
   "no-working-day",
+  "drift-decision-required",
 ] as const;
 
 export type DomainErrorCode = (typeof DOMAIN_ERROR_CODES)[number];

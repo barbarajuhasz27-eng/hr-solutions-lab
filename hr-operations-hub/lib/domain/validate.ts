@@ -350,6 +350,7 @@ export function findInvariantViolations(store: StoreV3): string[] {
       violations.push(`${where}: period key does not match the ${operation.schedule.frequency} schedule`);
     }
     if (isClosed(occurrence) && (occurrence.calendarDrift || occurrence.scheduleDrift)) violations.push(`${where}: closed occurrence with a drift suggestion`);
+    if (occurrence.calendarDrift && occurrence.scheduleDrift) violations.push(`${where}: more than one pending drift suggestion`);
     if (!people.has(occurrence.ownerId)) violations.push(`${where}: owner is not a person`);
     if (occurrence.backupId !== undefined && occurrence.backupId === occurrence.ownerId) violations.push(`${where}: backup equals owner`);
     if (occurrence.anchorKind === "event-start" && !occurrence.eventDetails) violations.push(`${where}: event occurrence without eventDetails`);

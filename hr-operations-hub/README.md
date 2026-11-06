@@ -1,7 +1,7 @@
 # HR Operations Hub
 ### HR Operations Readiness & Playbooks
 
-**Project status:** In development · M0 identity and shell, M1 domain model v3 and store, and M2 working time and schedule engine (working days, working hours, recurrence, generation) implemented; local checks pass (425 tests, typecheck, lint and production build)  
+**Project status:** In development · M0 identity and shell, M1 domain model v3 and store, and M2 working time and schedule engine (working days, working hours, recurrence, generation) implemented; local checks pass (454 tests, typecheck, lint and production build)  
 **Target user:** HR Generalists and lean HR teams  
 **Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab

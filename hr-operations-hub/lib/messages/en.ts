@@ -43,6 +43,8 @@ export const EN = {
   "history.migrated": "Moved into the new workspace from the earlier demo (v{fromVersion}).",
   "history.drift-kept": "{source} change reviewed: kept the current date; the rule would give {suggested}.",
   "history.moved.schedule": "Schedule change applied: anchor moved from {from} to {to}.",
+  "history.drift-suggested": "{source} changed: the rule now gives {suggested} instead of {anchor}. Apply or keep the current date.",
+  "history.drift-suggestion-cleared": "{source} suggestion for {suggested} withdrawn: {reason}.",
 
   // Schedule and calendar (§6.1, §6.6, §6.7). Rendered by the M6/M7 screens.
   "schedule.drift": "Schedule changed: new rule gives {date}",
@@ -56,6 +58,10 @@ export const EN = {
   "calendar.projected": "Projected",
   "drift.source.calendar": "Calendar",
   "drift.source.schedule": "Schedule",
+  "drift.cleared.superseded": "a newer change gives another date",
+  "drift.cleared.no-longer-different": "the rule gives the current date again",
+  "drift.cleared.no-valid-candidate": "the rule can no longer place this period",
+  "drift.cleared.kept-earlier": "this date was already reviewed and kept",
   "generation.nth-working-day-out-of-range": "The rule asks for working day {n}, but this month has fewer working days. The occurrence was not generated.",
   "generation.working-days-before-month-end-out-of-range": "This month has too few working days for the rule. The occurrence was not generated.",
   "generation.rule-frequency-mismatch": "This rule cannot be used with this frequency.",
@@ -121,6 +127,7 @@ export const EN = {
   "error.invalid-date": "The date is not valid.",
   "error.not-recurring": "Only a recurring operation has a schedule.",
   "error.non-working-day": "The new date is not a working day. Confirm the move to use it anyway.",
+  "error.drift-decision-required": "A schedule or calendar change suggests another date for this occurrence. Apply or keep it first.",
   "error.no-drift": "There is no schedule or calendar change to review for this occurrence.",
   "error.no-working-day": "The work calendar has no working day near this date.",
 } as const;
@@ -152,6 +159,7 @@ export interface HistoryContext {
 }
 
 const str = (value: string | number | boolean | undefined) => (value === undefined ? "" : String(value));
+const driftSource = (source: string | number | boolean | undefined) => EN[source === "schedule" ? "drift.source.schedule" : "drift.source.calendar"];
 
 /** The catalogue key a history event is rendered with. */
 export function historyMessageKey(event: Pick<HistoryEvent, "kind" | "taskId" | "detail">): MessageKey {
@@ -188,11 +196,17 @@ export function describeHistoryEvent(event: HistoryEvent, context: HistoryContex
       return message(key, { from: context.formatInstant(str(d.from)), to: context.formatInstant(str(d.to)) });
     case "history.drift-kept":
       return message(key, {
-        source: EN[d.source === "schedule" ? "drift.source.schedule" : "drift.source.calendar"],
+        source: driftSource(d.source),
         suggested: context.formatInstant(str(d.suggested)),
       });
     case "history.calendar-drift-applied":
       return message(key, { to: context.formatInstant(str(d.to)) });
+    case "history.drift-suggested":
+      return message(key, { source: driftSource(d.source), suggested: context.formatInstant(str(d.suggested)), anchor: context.formatInstant(str(d.anchorAt)) });
+    case "history.drift-suggestion-cleared": {
+      const reason = `drift.cleared.${str(d.reason)}`;
+      return message(key, { source: driftSource(d.source), suggested: context.formatInstant(str(d.suggested)), reason: isMessageKey(reason) ? EN[reason] : str(d.reason) });
+    }
     case "history.closed":
       return message(key, { outcome: isMessageKey(`outcome.${str(d.outcome)}`) ? EN[`outcome.${str(d.outcome)}` as MessageKey] : str(d.outcome) });
     case "history.migrated":
