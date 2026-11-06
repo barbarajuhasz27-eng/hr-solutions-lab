@@ -3,7 +3,7 @@
 import { ArrowLeft, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { completeUpdate, getRecoveryPlan, isActionOnHold } from "@/lib/engine";
+import { getRecoveryPlan, isActionOnHold } from "@/lib/engine";
 import { occurrenceHref } from "@/lib/shell";
 import { HoldForm } from "../action-parts";
 import { useHubStore } from "../hub-store";
@@ -16,7 +16,7 @@ import { OccurrenceNotFound } from "./occurrence-view";
  * existing Rapid Recovery behaviour from `getRecoveryPlan`; only the presentation is new.
  */
 export function RecoveryView({ id }: { id: string }) {
-  const { hydrated, getActivity, now, updateAction, applyFallback, saveHold, releaseHold } = useHubStore();
+  const { hydrated, getActivity, now, completeAction, applyFallback, saveHold, releaseHold } = useHubStore();
   const [holdTarget, setHoldTarget] = useState<string | null>(null);
   const activity = hydrated ? getActivity(id) : undefined;
 
@@ -76,7 +76,7 @@ export function RecoveryView({ id }: { id: string }) {
                             />
                           )}
                           <div className="rc-card-actions">
-                            <button className="btn btn-rc btn-sm" type="button" onClick={() => updateAction(activity.id, action.id, completeUpdate("Completed in Rapid Recovery."))}>
+                            <button className="btn btn-rc btn-sm" type="button" onClick={() => completeAction(activity, action, "recovery")}>
                               Mark done
                             </button>
                             {action.fallback && (

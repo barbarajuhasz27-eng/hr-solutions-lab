@@ -35,6 +35,22 @@ export function recoveryHref(activityId: string): string {
   return `${occurrenceHref(activityId)}/recovery`;
 }
 
+function decodePath(path: string): string {
+  try {
+    return decodeURIComponent(path);
+  } catch {
+    return path;
+  }
+}
+
+/**
+ * Whether two pathnames name the same route, whether or not they are percent-encoded. v3 occurrence IDs
+ * contain ":" (`operationId:periodKey`), which a browser may show encoded or not.
+ */
+export function isSamePath(a: string, b: string): boolean {
+  return decodePath(a) === decodePath(b);
+}
+
 export interface TaskRef {
   activity: Activity;
   action: ActionInstance;

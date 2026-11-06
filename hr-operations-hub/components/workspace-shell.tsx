@@ -3,6 +3,7 @@
 import { X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, type ReactNode } from "react";
+import { isSamePath } from "@/lib/shell";
 import { useHubStore } from "./hub-store";
 import { TopBar } from "./top-bar";
 
@@ -17,7 +18,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (previousPath.current === pathname) return;
     previousPath.current = pathname;
-    if (notice && notice.path !== pathname) setNotice(null);
+    if (notice && !isSamePath(notice.path, pathname)) setNotice(null);
   }, [pathname, notice, setNotice]);
 
   return (
@@ -25,7 +26,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
       <a className="skip-link" href="#main">Skip to content</a>
       <TopBar />
       <main className="content" id="main">
-        {notice && notice.path === pathname && (
+        {notice && isSamePath(notice.path, pathname) && (
           <div className="inline-notice" role="status">
             <span>{notice.text}</span>
             <button className="icon-button" type="button" aria-label="Dismiss notice" onClick={() => setNotice(null)}>

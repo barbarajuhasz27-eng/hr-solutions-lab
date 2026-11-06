@@ -16,7 +16,7 @@ import {
   type TaskRef,
 } from "@/lib/shell";
 import { useHubStore } from "../hub-store";
-import { dueLabel, formatDate, formatLongDate, formatTime, LoadingState, minutesToStart, PageHeader, ReadinessState } from "../ui";
+import { dueLabel, formatDate, formatFullDate, formatLongDate, formatTime, LoadingState, minutesToStart, PageHeader, ReadinessState } from "../ui";
 
 function TaskList({ items, now, kind }: { items: TaskRef[]; now: Date; kind: "overdue" | "waiting" }) {
   return (
@@ -120,7 +120,7 @@ function PriorityBand() {
             : reason ? ` ${reason.message}` : ""}
         </p>
         <div className="decision-meta">
-          <span><CalendarDays size={13} aria-hidden /> <span className="mono">{formatDate(start, { year: "numeric" })} · {formatTime(start)}</span></span>
+          <span><CalendarDays size={13} aria-hidden /> <span className="mono">{formatFullDate(start)} · {formatTime(start)}</span></span>
           <span><Users size={13} aria-hidden /> {priority.activity.coordinator}</span>
           <ReadinessState status={priority.readiness.status} />
         </div>

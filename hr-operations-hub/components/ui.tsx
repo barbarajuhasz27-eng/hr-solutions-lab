@@ -1,28 +1,19 @@
 import { Ban, Check, Circle, CircleCheck, Clock3, Hourglass, TriangleAlert, Zap } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { formatDuration, getStatusLabel } from "@/lib/engine";
+import { getStatusLabel } from "@/lib/engine";
+import { formatDuration, formatShortDate } from "@/lib/format";
 import type { Activity, ActionInstance, ActivityStatus } from "@/lib/model";
 
 // ---------------------------------------------------------------------------
-// Formatting (unchanged from the former single-page component; lib/format.ts follows in M1)
+// Formatting: every date, time and duration comes from lib/format.ts (§8.6, Europe/Vienna).
 // ---------------------------------------------------------------------------
 
-export function formatDate(date: Date, options: Intl.DateTimeFormatOptions = {}) {
-  return new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", ...options }).format(date);
-}
-
-export function formatLongDate(date: Date) {
-  return new Intl.DateTimeFormat("en-GB", { weekday: "long", day: "numeric", month: "long" }).format(date);
-}
-
-export function formatTime(date: Date) {
-  return new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit" }).format(date);
-}
-
-export function formatWeekday(date: Date) {
-  return new Intl.DateTimeFormat("en-GB", { weekday: "short" }).format(date);
-}
+/** Short date "DD.MM." */
+export { formatShortDate as formatDate } from "@/lib/format";
+/** Full date "DD.MM.YYYY" */
+export { formatDate as formatFullDate } from "@/lib/format";
+export { formatLongDate, formatTime, formatWeekday } from "@/lib/format";
 
 export function minutesToStart(startsAt: string, now: Date) {
   return (new Date(startsAt).getTime() - now.getTime()) / 60_000;
@@ -46,7 +37,7 @@ export function dueLabel(action: ActionInstance, activity: Activity, now: Date) 
   }
   if (delta < 60 * 60_000) return `Due in ${Math.ceil(delta / 60_000)}m`;
   if (delta < 24 * 60 * 60_000) return `Due in ${Math.floor(delta / 3_600_000)}h`;
-  return `Due ${formatDate(dueAt)}`;
+  return `Due ${formatShortDate(dueAt)}`;
 }
 
 // ---------------------------------------------------------------------------
