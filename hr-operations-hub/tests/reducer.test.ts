@@ -11,6 +11,7 @@ import {
 } from "../lib/domain/seed";
 import type { HistoryEvent, Occurrence, StoreV3, Task } from "../lib/domain/types";
 import { findInvariantViolations } from "../lib/domain/validate";
+import { monthlySchedule, recurringOperation, storeWith } from "./fixtures/schedule";
 
 const SEEDED = "2026-11-03T08:00:00.000Z";
 const NOW = "2026-11-03T08:10:00.000Z";
@@ -38,6 +39,8 @@ function run(state: StoreV3, action: HubAction, context: ActionContext = ctx): S
 }
 
 const seed = () => createSeedStore(SEEDED);
+const CUTOFF_NOV = "op-cutoff:2026-11";
+const CUTOFF_DEC = "op-cutoff:2026-12";
 const occ = (state: StoreV3, id = RESCUE_OCCURRENCE_ID) => state.occurrences.find((item) => item.id === id)!;
 const task = (state: StoreV3, taskId: string, id = RESCUE_OCCURRENCE_ID): Task => occ(state, id).tasks.find((item) => item.id === taskId)!;
 const lastEvent = (state: StoreV3, id = RESCUE_OCCURRENCE_ID): HistoryEvent => occ(state, id).history.at(-1)!;
@@ -258,6 +261,12 @@ describe("operation actions", () => {
     ]);
   });
 
+  it("createOperation inside the lead time activates at once: generated, then activated", () => {
+    const next = run(seed(), { ...create, anchorAt: "2026-11-05T09:00:00.000Z" } as HubAction);
+    expect(next.occurrences[0].status).toBe("active");
+    expect(next.occurrences[0].history.map((event) => event.kind)).toEqual(["generated", "activated"]);
+  });
+
   it("createOperation validates IDs, ownership and the playbook", () => {
     const state = seed();
     expectRejected(run(state, create), create, "duplicate-id");
@@ -328,21 +337,36 @@ describe("reducer contract", () => {
     moveOccurrence: { action: { type: "moveOccurrence", occurrenceId: RESCUE_OCCURRENCE_ID, anchorAt: LATER }, event: "moved" },
     skipOccurrence: { action: { type: "skipOccurrence", occurrenceId: RESCUE_OCCURRENCE_ID, reason: "Dropped" }, event: "skipped" },
     closeOccurrence: { action: { type: "closeOccurrence", occurrenceId: RESCUE_OCCURRENCE_ID, outcome: "missed", note: "Postponed" }, event: "closed" },
-    createOperation: { action: { type: "createOperation", operation: { id: "op-x", title: "X", playbookId: "training-session", ownerId: "p-sophie" }, anchorAt: LATER }, event: "generated", occurrence: "op-x:once" },
+    // Anchor outside the lead time, so creation adds only `generated` (inside it, `activated` follows; see below).
+    createOperation: { action: { type: "createOperation", operation: { id: "op-x", title: "X", playbookId: "training-session", ownerId: "p-sophie" }, anchorAt: "2026-11-20T09:00:00.000Z" }, event: "generated", occurrence: "op-x:once" },
     updateOwnership: { action: { type: "updateOwnership", operationId: RESCUE_OPERATION_ID, ownerId: "p-lena" }, event: null },
     setOperationStatus: { action: { type: "setOperationStatus", operationId: RESCUE_OPERATION_ID, status: "paused" }, event: null },
+    // M2. A started occurrence gets a drift suggestion (logged as drift-suggested); the decision is logged too.
+    advanceSchedule: { action: { type: "advanceSchedule" }, event: "generated", occurrence: CUTOFF_DEC },
+    updateSchedule: { action: { type: "updateSchedule", operationId: "op-cutoff", change: { rule: { kind: "workingDaysBeforeMonthEnd", n: 3 } }, effectiveFrom: "2026-11-01" }, event: "drift-suggested", occurrence: CUTOFF_NOV },
+    updateCalendar: { action: { type: "updateCalendar", change: { companyClosures: [{ date: "2026-11-30", name: "Closure" }] } }, event: "drift-suggested", occurrence: CUTOFF_NOV },
+    decideDrift: { action: { type: "decideDrift", occurrenceId: CUTOFF_NOV, kind: "calendar", decision: "keep" }, event: "drift-kept", occurrence: CUTOFF_NOV },
   };
 
   function prepared(type: HubActionType): StoreV3 {
     const state = seed();
-    return type === "releaseHold" ? applyAction(state, representative.setHold.action, { ...ctx, now: SEEDED }) : state;
+    if (type === "releaseHold") return applyAction(state, representative.setHold.action, { ...ctx, now: SEEDED });
+    const recurring = storeWith(SEEDED, [recurringOperation("op-cutoff", monthlySchedule())]);
+    if (type === "advanceSchedule") return recurring;
+    // November generated and started (a hold), December and January not started.
+    let started = applyAction(recurring, { type: "advanceSchedule" }, { ...ctx, now: SEEDED });
+    started = applyAction(started, { type: "setHold", occurrenceId: CUTOFF_NOV, taskId: "collect", hold: { kind: "waiting", waitingOn: "Finance" } }, { ...ctx, now: SEEDED });
+    if (type === "updateSchedule" || type === "updateCalendar") return started;
+    if (type === "decideDrift") return applyAction(started, representative.updateCalendar.action, { ...ctx, now: SEEDED });
+    return state;
   }
 
   it.each(Object.keys(representative) as HubActionType[])("%s appends its history event with actor, time and structured detail", (type) => {
     const { action, event, occurrence = RESCUE_OCCURRENCE_ID } = representative[type];
     const state = prepared(type);
     const next = run(state, action);
-    expect(next.modified).toBe(true);
+    // Generation and activation are automatic and do not count as the visitor's changes.
+    expect(next.modified).toBe(type !== "advanceSchedule");
     const before = state.occurrences.find((item) => item.id === occurrence)?.history ?? [];
     const after = next.occurrences.find((item) => item.id === occurrence)!.history;
     if (event === null) {

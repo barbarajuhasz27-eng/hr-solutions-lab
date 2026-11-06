@@ -28,7 +28,7 @@ export interface MigrationContext {
   /** When the v2 data was last known to be current (on the possibly shifted timeline). */
   savedAt: ISODateTime;
   fromVersion: 1 | 2;
-  store: Pick<StoreV3, "people" | "playbooks">;
+  store: Pick<StoreV3, "people" | "playbooks" | "calendar">;
 }
 
 /** "activity-training-rescue" → "op-training-rescue"; any other ID gets an "op-" prefix. */
@@ -106,7 +106,7 @@ export function migrateActivity(activity: Activity, operationId: string, ctx: Mi
     periodKey: ONE_OFF_PERIOD_KEY,
     anchorKind: "event-start",
     anchorAt,
-    status: closedAt ? "completed" : openStatusAt(anchorAt, playbook, tasks, ctx.now),
+    status: closedAt ? "completed" : openStatusAt(anchorAt, playbook, tasks, ctx.now, ctx.store.calendar),
     playbookId: TRAINING_PLAYBOOK_ID,
     playbookVersion: TRAINING_PLAYBOOK_VERSION,
     ownerId,

@@ -1,5 +1,6 @@
 /** lib/messages/en.ts: stable keys for data-driven strings (§8.6). */
 import { describe, expect, it } from "vitest";
+import { DOMAIN_ERROR_CODES } from "../lib/domain/errors";
 import { applyAction, type HubAction } from "../lib/domain/reducer";
 import { createSeedStore, CURRENT_USER_ID, RESCUE_OCCURRENCE_ID, RESCUE_OPERATION_ID } from "../lib/domain/seed";
 import { HISTORY_EVENT_KINDS, type HistoryEvent } from "../lib/domain/types";
@@ -39,14 +40,19 @@ describe("catalogue keys", () => {
   });
 
   it("has an error message for every domain error code the reducer raises", () => {
-    const codes = [
-      "occurrence-not-found", "operation-not-found", "task-not-found", "playbook-not-found", "playbook-not-available",
-      "occurrence-closed", "task-resolved", "task-not-resolved", "task-not-on-hold", "invalid-hold", "no-fallback",
-      "essential-unassigned", "unknown-assignee", "same-assignee", "owner-not-person", "backup-equals-owner",
-      "backup-required", "duplicate-id", "outcome-not-allowed", "note-required", "note-too-long", "invalid-instant",
-      "offset-unit-unsupported", "cancel-one-off-only", "invalid-status",
-    ];
-    for (const code of codes) expect(isMessageKey(`error.${code}`)).toBe(true);
+    // The list is the source of truth for the DomainErrorCode union, so new codes cannot miss a message.
+    expect(DOMAIN_ERROR_CODES).toEqual(expect.arrayContaining(["invalid-schedule", "invalid-calendar", "non-working-day", "no-drift", "not-recurring"]));
+    for (const code of DOMAIN_ERROR_CODES) expect(isMessageKey(`error.${code}`)).toBe(true);
+  });
+
+  it("has a message for every generation issue and the calendar warnings of §6.1", () => {
+    for (const issue of ["nth-working-day-out-of-range", "working-days-before-month-end-out-of-range", "rule-frequency-mismatch", "no-working-day", "playbook-not-found", "backup-required"]) {
+      expect(isMessageKey(`generation.${issue}`)).toBe(true);
+    }
+    expect(message("calendar.unverified-holidays", { years: "2026–2027" })).toBe(
+      "Public holidays for 2026–2027 were entered manually and have not been checked against the official source. Deadlines that depend on them may be wrong.",
+    );
+    expect(message("calendar.missing-holidays", { year: 2028 })).toBe("No public holidays configured for 2028; working-day deadlines may be wrong");
   });
 
   it("does not resolve unknown keys", () => {
@@ -99,6 +105,9 @@ describe("describeHistoryEvent()", () => {
     [event("recovery-decision"), "Recovery decision recorded."],
     [event("calendar-drift-applied", { to: "2026-12-21T11:00:00.000Z" }), "Calendar change applied: anchor moved to 21.12.2026 12:00."],
     [event("migrated", { fromVersion: 2 }), "Moved into the new workspace from the earlier demo (v2)."],
+    [event("moved", { from: "2026-11-23T11:00:00.000Z", to: "2026-11-25T11:00:00.000Z", reason: "schedule-changed" }), "Schedule change applied: anchor moved from 23.11.2026 12:00 to 25.11.2026 12:00."],
+    [event("drift-kept", { source: "calendar", suggested: "2026-12-23T11:00:00.000Z" }), "Calendar change reviewed: kept the current date; the rule would give 23.12.2026 12:00."],
+    [event("drift-kept", { source: "schedule", suggested: "2026-11-25T11:00:00.000Z" }), "Schedule change reviewed: kept the current date; the rule would give 25.11.2026 12:00."],
   ])("%#: %s", (input, expected) => {
     expect(describeHistoryEvent(input, context)).toBe(expected);
   });

@@ -7,10 +7,16 @@
  *   structured `detail`.
  * - Invalid actions throw a `DomainError`; the caller keeps the previous state.
  *
- * Deferred: coverage and hand-over, the independence guard and recovery decisions (M4/M8), schedule and
- * calendar updates and activation (M2). Their types exist in `types.ts`.
+ * M2 adds the schedule engine: `advanceSchedule` (generation and activation, run on load and on each
+ * clock tick), `updateSchedule` (§6.6), `updateCalendar` (§6.7) and `decideDrift` (apply or keep a
+ * schedule or calendar drift suggestion). Every action that creates, regenerates or moves an occurrence
+ * activates it at once when its lead time has started, so `active` always comes with an `activated` event.
+ *
+ * Deferred: coverage and hand-over, the independence guard and recovery decisions (M4/M8). Their types
+ * exist in `types.ts`.
  */
 import {
+  activateIfDue,
   assigneeRef,
   DomainError,
   findPlaybook,
@@ -20,12 +26,23 @@ import {
   isNotStarted,
   isTaskResolved,
   minutesBetween,
-  addMinutes,
   occurrenceId as buildOccurrenceId,
   ONE_OFF_PERIOD_KEY,
-  resolveDueAt,
   toInstant,
 } from "./occurrence";
+import { localDateOf } from "../calendar/dates";
+import { isWorkingDay } from "../calendar/working-days";
+import {
+  applyCalendarChange,
+  applyScheduleChange,
+  decideDrift,
+  pendingDrift,
+  rescheduleTasks,
+  type CalendarChange,
+  type DriftKind,
+  type ScheduleChange,
+} from "../schedule/changes";
+import { advanceSchedule } from "../schedule/generation";
 import { message } from "../messages/en";
 import { closeOptions, outcomeRequiresNote, assessOutcome, type CloseOutcome } from "./outcome";
 import type {
@@ -67,7 +84,13 @@ export type HubAction =
   | { type: "releaseHold"; occurrenceId: string; taskId: string }
   | { type: "useFallback"; occurrenceId: string; taskId: string; note?: string }
   | { type: "reassignTask"; occurrenceId: string; taskId: string; responsible: Assignee | Unassigned }
-  | { type: "moveOccurrence"; occurrenceId: string; anchorAt: ISODateTime }
+  | {
+      type: "moveOccurrence";
+      occurrenceId: string;
+      anchorAt: ISODateTime;
+      /** A move onto a non-working day requires confirmation (§6.5). */
+      confirmNonWorkingDay?: boolean;
+    }
   | { type: "skipOccurrence"; occurrenceId: string; reason: string }
   | {
       type: "closeOccurrence";
@@ -79,13 +102,20 @@ export type HubAction =
     }
   | {
       type: "createOperation";
-      /** One-off operations only in M1; recurring operations need the M2 schedule engine. */
+      /** One-off operations only. Recurring creation flows with anchor preview are M5. */
       operation: { id: string; title: string; playbookId: string; ownerId: string; backupId?: string };
       anchorAt: ISODateTime;
       location?: string;
     }
   | { type: "updateOwnership"; operationId: string; ownerId: string; backupId?: string }
-  | { type: "setOperationStatus"; operationId: string; status: OperationStatus };
+  | { type: "setOperationStatus"; operationId: string; status: OperationStatus }
+  /** Generation inside the horizon and activation (§6.4). Automatic: does not mark the demo as modified. */
+  | { type: "advanceSchedule" }
+  /** A new schedule version (§6.6): rule, time, interval, weekend shift or anchor period offset. */
+  | { type: "updateSchedule"; operationId: string; change: ScheduleChange; effectiveFrom: string }
+  /** Working week, working hours, public holidays or company closures (§6.7). */
+  | { type: "updateCalendar"; change: CalendarChange }
+  | { type: "decideDrift"; occurrenceId: string; kind: DriftKind; decision: "apply" | "keep" };
 
 export type HubActionType = HubAction["type"];
 
@@ -103,6 +133,12 @@ function getOpenOccurrence(state: StoreV3, id: string): Occurrence {
   const occurrence = getOccurrence(state, id);
   if (isClosed(occurrence)) throw new DomainError("occurrence-closed", id);
   return occurrence;
+}
+
+/** Move, close and skip must not silently discard a pending schedule or calendar suggestion. */
+function assertNoPendingDrift(occurrence: Occurrence): void {
+  const pending = pendingDrift(occurrence);
+  if (pending) throw new DomainError("drift-decision-required", `${occurrence.id}: ${pending.kind}`);
 }
 
 function getTask(occurrence: Occurrence, taskId: string): Task {
@@ -157,6 +193,20 @@ function replaceOccurrence(state: StoreV3, next: Occurrence): StoreV3 {
     ...state,
     modified: true,
     occurrences: state.occurrences.map((item) => (item.id === next.id ? next : item)),
+  };
+}
+
+/** Activates the given occurrences when their lead time has started (§6.4). */
+function activate(state: StoreV3, ids: string[], ctx: ActionContext): StoreV3 {
+  if (ids.length === 0) return state;
+  const wanted = new Set(ids);
+  return {
+    ...state,
+    occurrences: state.occurrences.map((occurrence) => {
+      if (!wanted.has(occurrence.id)) return occurrence;
+      const playbook = findPlaybook(state, occurrence.playbookId, occurrence.playbookVersion);
+      return playbook ? activateIfDue(occurrence, playbook, state.calendar, ctx.now, ctx.actorId) : occurrence;
+    }),
   };
 }
 
@@ -309,30 +359,32 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
 
     case "moveOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const anchorAt = toInstant(action.anchorAt);
-      const delta = minutesBetween(occurrence.anchorAt, anchorAt);
+      const nonWorkingDay = !isWorkingDay(state.calendar, localDateOf(anchorAt));
+      if (nonWorkingDay && !action.confirmNonWorkingDay) throw new DomainError("non-working-day", localDateOf(anchorAt));
       const playbook = findPlaybook(state, occurrence.playbookId, occurrence.playbookVersion);
       // Due dates are recalculated from the new anchor for unresolved tasks only (§6.5).
-      const tasks = occurrence.tasks.map((task) => {
-        if (isTaskResolved(task)) return task;
-        const template = playbook?.tasks.find((item) => item.id === task.id);
-        const dueAt = template ? resolveDueAt(anchorAt, template) : addMinutes(task.dueAt, delta);
-        return { ...task, dueAt };
-      });
       const next: Occurrence = {
         ...occurrence,
         anchorAt,
         originalAnchorAt: occurrence.originalAnchorAt ?? occurrence.anchorAt,
-        tasks,
+        tasks: rescheduleTasks(occurrence, playbook, anchorAt, state.calendar),
       };
-      return replaceOccurrence(state, {
+      const moved = replaceOccurrence(state, {
         ...next,
-        history: [...occurrence.history, historyEvent(occurrence, "moved", now, context.actorId, { from: occurrence.anchorAt, to: anchorAt })],
+        history: [...occurrence.history, historyEvent(occurrence, "moved", now, context.actorId, {
+          from: occurrence.anchorAt,
+          to: anchorAt,
+          ...(nonWorkingDay ? { nonWorkingDayConfirmed: true } : {}),
+        })],
       });
+      return activate(moved, [occurrence.id], context);
     }
 
     case "skipOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const reason = requireNote(action.reason, SKIP_REASON_MAX_LENGTH);
       return replaceOccurrence(state, {
         ...occurrence,
@@ -345,6 +397,7 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
 
     case "closeOccurrence": {
       const occurrence = getOpenOccurrence(state, action.occurrenceId);
+      assertNoPendingDrift(occurrence);
       const operation = getOperation(state, occurrence.operationId);
       if (action.outcome === "cancelled" && operation.schedule !== null) throw new DomainError("cancel-one-off-only");
       if (!closeOptions(occurrence, operation).includes(action.outcome)) {
@@ -397,15 +450,16 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
         periodKey: ONE_OFF_PERIOD_KEY,
         anchorAt: toInstant(action.anchorAt),
         location: action.location,
+        calendar: state.calendar,
         now,
         actorId: context.actorId,
       });
-      return {
+      return activate({
         ...state,
         modified: true,
         operations: [operation, ...state.operations],
         occurrences: [occurrence, ...state.occurrences],
-      };
+      }, [occurrence.id], context);
     }
 
     case "updateOwnership": {
@@ -419,32 +473,30 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
       if (!playbook) throw new DomainError("playbook-not-found", updated.playbookId);
       // Snapshot rule (§4.3): only not-started occurrences are regenerated; started and closed ones keep
       // their owner, backup and task assignments.
+      const regeneratedIds: string[] = [];
       const occurrences = state.occurrences.map((occurrence) => {
         if (occurrence.operationId !== updated.id || !isNotStarted(occurrence)) return occurrence;
+        regeneratedIds.push(occurrence.id);
         const regenerated = instantiateOccurrence({
           operation: updated,
           playbook,
           periodKey: occurrence.periodKey,
           anchorAt: occurrence.anchorAt,
           location: occurrence.eventDetails?.location,
+          calendar: state.calendar,
           now,
           actorId: context.actorId,
+          generatedDetail: { reason: "ownership-changed" },
         });
-        return {
-          ...regenerated,
-          history: [historyEvent({ ...regenerated, history: [] }, "generated", now, context.actorId, {
-            playbookId: playbook.id,
-            playbookVersion: playbook.version,
-            reason: "ownership-changed",
-          })],
-        };
+        // A manually moved anchor stays moved; its rule date is kept.
+        return occurrence.originalAnchorAt ? { ...regenerated, originalAnchorAt: occurrence.originalAnchorAt } : regenerated;
       });
-      return {
+      return activate({
         ...state,
         modified: true,
         operations: state.operations.map((item) => (item.id === updated.id ? updated : item)),
         occurrences,
-      };
+      }, regeneratedIds, context);
     }
 
     case "setOperationStatus": {
@@ -457,5 +509,22 @@ export function applyAction(state: StoreV3, action: HubAction, ctx: ActionContex
         operations: state.operations.map((item) => (item.id === operation.id ? { ...item, status: action.status } : item)),
       };
     }
+
+    case "advanceSchedule":
+      // The same object comes back when nothing was generated or activated.
+      return advanceSchedule(state, now, context.actorId).store;
+
+    case "updateSchedule": {
+      const result = applyScheduleChange(state, action.operationId, action.change, action.effectiveFrom, context);
+      return activate(result.store, result.touched, context);
+    }
+
+    case "updateCalendar": {
+      const result = applyCalendarChange(state, action.change, context);
+      return activate(result.store, result.touched, context);
+    }
+
+    case "decideDrift":
+      return activate(decideDrift(state, action.occurrenceId, action.kind, action.decision, context), [action.occurrenceId], context);
   }
 }
