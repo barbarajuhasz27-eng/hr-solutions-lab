@@ -33,9 +33,10 @@ import { PlaybooksView } from "../components/views/playbooks-view";
 import { RecoveryView } from "../components/views/recovery-view";
 import { TodayView } from "../components/views/today-view";
 import { WorkspaceShell } from "../components/workspace-shell";
-import { RESCUE_ACTIVITY_ID } from "../lib/seed";
-import { getExceptionCounts, type ExceptionFilter } from "../lib/shell";
-import { STORAGE_KEY } from "../lib/storage";
+import { RESCUE_OCCURRENCE_ID, UPCOMING_OCCURRENCE_ID } from "../lib/domain/seed";
+import { getExceptionCounts, occurrenceHref, recoveryHref, type ExceptionFilter } from "../lib/shell";
+import { STORE_KEY } from "../lib/store/persistence";
+import { V2_STORAGE_KEY } from "../lib/storage";
 
 function Probe({ onStore }: { onStore: (store: ReturnType<typeof useHubStore>) => void }) {
   onStore(useHubStore());
@@ -140,7 +141,7 @@ describe("Exception strip", () => {
     expect(waiting).toHaveClass("is-zero");
     expect(screen.getByTestId("exception-at-risk")).not.toHaveClass("is-zero");
 
-    const activity = store().getActivity(RESCUE_ACTIVITY_ID)!;
+    const activity = store().getActivity(RESCUE_OCCURRENCE_ID)!;
     const action = activity.actions.find((item) => item.id === "room-confirmed")!;
     act(() => store().saveHold(activity, action, { kind: "waiting", waitingOn: "Facilities" }));
     expect(waiting).toHaveTextContent("Waiting on others1");
@@ -166,10 +167,10 @@ describe("Today filters", () => {
   it("shows the priority decision, the occurrence table and playbooks without a filter", async () => {
     await renderToday(null);
     expect(screen.getByRole("heading", { name: /Leading through change starts in/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Open recovery/ })).toHaveAttribute("href", `/o/${RESCUE_ACTIVITY_ID}/recovery`);
+    expect(screen.getByRole("link", { name: /Open recovery/ })).toHaveAttribute("href", recoveryHref(RESCUE_OCCURRENCE_ID));
     const table = screen.getByRole("table");
     expect(within(table).getAllByRole("row")).toHaveLength(4);
-    expect(within(table).getByRole("link", { name: "Excel essentials for managers" })).toHaveAttribute("href", "/o/activity-training-upcoming");
+    expect(within(table).getByRole("link", { name: "Excel essentials for managers" })).toHaveAttribute("href", occurrenceHref(UPCOMING_OCCURRENCE_ID));
   });
 
   it("filters to overdue tasks", async () => {
@@ -191,7 +192,7 @@ describe("Today filters", () => {
   it("filters to waiting tasks and shows an empty state when there are none", async () => {
     const { store } = await renderToday("waiting");
     expect(screen.getByText("No task is on a Waiting hold.")).toBeInTheDocument();
-    const activity = store().getActivity(RESCUE_ACTIVITY_ID)!;
+    const activity = store().getActivity(RESCUE_OCCURRENCE_ID)!;
     const action = activity.actions.find((item) => item.id === "it-setup")!;
     act(() => store().saveHold(activity, action, { kind: "waiting", waitingOn: "IT Service Desk", note: "Ticket raised" }));
     const list = screen.getByRole("list", { name: "Tasks waiting on others" });
@@ -215,8 +216,8 @@ describe("Ported features at their new routes", () => {
     await user.click(createButtons[0]);
     expect(store().activities).toHaveLength(before + 1);
     const created = store().activities[0];
-    expect(nav.push).toHaveBeenCalledWith(`/o/${created.id}`);
-    expect(store().notice).toEqual({ text: expect.stringMatching(/New activity created/), path: `/o/${created.id}` });
+    expect(nav.push).toHaveBeenCalledWith(occurrenceHref(created.id));
+    expect(store().notice).toEqual({ text: expect.stringMatching(/New activity created/), path: occurrenceHref(created.id) });
   });
 
   it("shows a notice on the route it belongs to and dismisses it after navigating away", async () => {
@@ -227,7 +228,7 @@ describe("Ported features at their new routes", () => {
     const created = store().activities[0];
 
     // The notice is set just before navigating; it must survive that navigation.
-    navigate(`/o/${created.id}`, <WorkspaceShell><OccurrenceView id={created.id} /></WorkspaceShell>);
+    navigate(occurrenceHref(created.id), <WorkspaceShell><OccurrenceView id={created.id} /></WorkspaceShell>);
     expect(await screen.findByText(/New activity created from the playbook/)).toBeInTheDocument();
 
     navigate("/", <WorkspaceShell><TodayView filter={null} /></WorkspaceShell>);
@@ -237,7 +238,7 @@ describe("Ported features at their new routes", () => {
 
   it("updates action status, holds and releases in the occurrence workspace", async () => {
     const user = userEvent.setup();
-    renderApp(<OccurrenceView id={RESCUE_ACTIVITY_ID} />, { path: `/o/${RESCUE_ACTIVITY_ID}` });
+    renderApp(<OccurrenceView id={RESCUE_OCCURRENCE_ID} />, { path: occurrenceHref(RESCUE_OCCURRENCE_ID) });
     await screen.findByRole("heading", { level: 1, name: "Leading through change" });
     expect(screen.getByText("Preparation timeline")).toBeInTheDocument();
     expect(screen.getAllByText(/Needs first:/).length).toBeGreaterThan(0);
@@ -257,12 +258,12 @@ describe("Ported features at their new routes", () => {
 
     await user.click(within(row).getByRole("button", { name: /Release hold/ }));
     expect(within(row).getByRole("button", { name: "Waiting / blocked" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Open recovery/ })).toHaveAttribute("href", `/o/${RESCUE_ACTIVITY_ID}/recovery`);
+    expect(screen.getByRole("link", { name: /Open recovery/ })).toHaveAttribute("href", recoveryHref(RESCUE_OCCURRENCE_ID));
   });
 
   it("opens Rapid Recovery in the dark recovery mode and leaves to the occurrence", async () => {
     const user = userEvent.setup();
-    const { container, store } = renderApp(<RecoveryView id={RESCUE_ACTIVITY_ID} />, { path: `/o/${RESCUE_ACTIVITY_ID}/recovery` });
+    const { container, store } = renderApp(<RecoveryView id={RESCUE_OCCURRENCE_ID} />, { path: recoveryHref(RESCUE_OCCURRENCE_ID) });
     await screen.findByRole("heading", { level: 1, name: "Leading through change" });
 
     expect(container.querySelector("[data-mode='recovery']")).toHaveClass("recovery-mode");
@@ -270,23 +271,29 @@ describe("Ported features at their new routes", () => {
     for (const title of ["Must do now", "Can simplify", "Blocked / needs someone else", "Can follow up later"]) {
       expect(screen.getByRole("heading", { level: 2, name: new RegExp(title.replace("/", "\\/")) })).toBeInTheDocument();
     }
-    expect(screen.getByRole("link", { name: /Leave recovery/ })).toHaveAttribute("href", `/o/${RESCUE_ACTIVITY_ID}`);
+    expect(screen.getByRole("link", { name: /Leave recovery/ })).toHaveAttribute("href", occurrenceHref(RESCUE_OCCURRENCE_ID));
 
     const fallbacks = screen.getAllByRole("button", { name: "Use fallback" });
     await user.click(fallbacks[0]);
-    expect(store().getActivity(RESCUE_ACTIVITY_ID)!.actions.some((action) => action.fallbackUsed)).toBe(true);
+    expect(store().getActivity(RESCUE_OCCURRENCE_ID)!.actions.some((action) => action.fallbackUsed)).toBe(true);
   });
 
-  it("persists changes in the existing v2 demo storage", async () => {
+  // M1: replaces "persists changes in the existing v2 demo storage". Stricter: the change must land in the
+  // v3 store as a resolved task with a history event, and no v2 data may be written any more.
+  it("persists changes in the v3 store with a history event, and writes no v2 data", async () => {
     const user = userEvent.setup();
-    renderApp(<OccurrenceView id={RESCUE_ACTIVITY_ID} />, { path: `/o/${RESCUE_ACTIVITY_ID}` });
+    renderApp(<OccurrenceView id={RESCUE_OCCURRENCE_ID} />, { path: occurrenceHref(RESCUE_OCCURRENCE_ID) });
     await screen.findByRole("heading", { level: 1, name: "Leading through change" });
     await user.click(screen.getByRole("button", { name: "Mark Confirm participant list done" }));
-    const stored = JSON.parse(window.localStorage.getItem(STORAGE_KEY)!);
-    expect(stored.version).toBe(2);
+    const stored = JSON.parse(window.localStorage.getItem(STORE_KEY)!);
+    expect(stored.version).toBe(3);
     expect(stored.modified).toBe(true);
-    const rescue = stored.activities.find((activity: { id: string }) => activity.id === RESCUE_ACTIVITY_ID);
-    expect(rescue.actions.find((action: { id: string }) => action.id === "participants-confirmed").status).toBe("done");
+    const rescue = stored.occurrences.find((occurrence: { id: string }) => occurrence.id === RESCUE_OCCURRENCE_ID);
+    const task = rescue.tasks.find((item: { id: string }) => item.id === "participants-confirmed");
+    expect(task.status).toBe("done");
+    expect(task.resolvedAt).toEqual(expect.any(String));
+    expect(rescue.history.at(-1)).toMatchObject({ kind: "task-completed", taskId: "participants-confirmed", actorId: "p-sophie" });
+    expect(window.localStorage.getItem(V2_STORAGE_KEY)).toBeNull();
   });
 });
 

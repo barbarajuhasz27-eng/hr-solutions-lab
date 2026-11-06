@@ -72,7 +72,8 @@ describe("loading the demo for returning visitors", () => {
     expect(minutesUntilStart(rescue, now)).toBe(45);
     expect(rescue.actions.find((action) => action.id === "trainer-confirmed")?.status).toBe("done");
     expect(getReadiness(rescue, now).status).toBe("recovery");
-    expect(loaded.notice).toContain("3d");
+    // M1: durations now come from lib/format.ts in the §8.6 style ("3 d", formerly "3d").
+    expect(loaded.notice).toContain("3 d");
   });
 
   it("only treats a demo as stale after the configured absence", () => {

@@ -1,3 +1,9 @@
+/**
+ * M0 readiness and Rapid Recovery engine on the Activity view model. Since M1 it runs on v3 data through
+ * `lib/store/activity-adapter.ts`; M3 replaces it with the occurrence-based engine (§7).
+ */
+import { HOLD_NOTE_MAX_LENGTH, WAITING_ON_MAX_LENGTH } from "./domain/reducer";
+import { formatDuration } from "./format";
 import type {
   Activity,
   ActivityStatus,
@@ -14,8 +20,7 @@ export const RECOVERY_WINDOW_MINUTES = 60;
 /** Essential actions due within this window — or waiting on someone inside it — need attention. */
 export const ATTENTION_WINDOW_MINUTES = 24 * 60;
 
-export const WAITING_ON_MAX_LENGTH = 60;
-export const HOLD_NOTE_MAX_LENGTH = 160;
+export { formatDuration, HOLD_NOTE_MAX_LENGTH, WAITING_ON_MAX_LENGTH };
 
 type ActionIndex = Map<string, ActionInstance>;
 
@@ -29,20 +34,6 @@ export function getActionDueAt(startsAt: string, offsetMinutes: number): Date {
 
 function minutesUntil(date: Date, now: Date): number {
   return (date.getTime() - now.getTime()) / 60_000;
-}
-
-/** Compact, human-readable duration: "45 min", "3h 20m", "2d 4h". */
-export function formatDuration(totalMinutes: number): string {
-  const minutes = Math.max(0, Math.floor(totalMinutes));
-  if (minutes < 60) return `${minutes} min`;
-  if (minutes < 24 * 60) {
-    const hours = Math.floor(minutes / 60);
-    const rest = minutes % 60;
-    return rest ? `${hours}h ${rest}m` : `${hours}h`;
-  }
-  const days = Math.floor(minutes / (24 * 60));
-  const hours = Math.floor((minutes % (24 * 60)) / 60);
-  return hours ? `${days}d ${hours}h` : `${days}d`;
 }
 
 // ---------------------------------------------------------------------------

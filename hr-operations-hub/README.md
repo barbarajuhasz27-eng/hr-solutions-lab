@@ -1,7 +1,7 @@
 # HR Operations Hub
 ### HR Operations Readiness & Playbooks
 
-**Project status:** In development · first functional slice plus readiness improvements implemented; local checks pass (51 tests, typecheck, lint and production build)  
+**Project status:** In development · M0 identity and shell plus M1 domain model v3 and store (versioned local store with v1/v2 migration) implemented; local checks pass (257 tests, typecheck, lint and production build)  
 **Target user:** HR Generalists and lean HR teams  
 **Domain:** HR Operations · Operational Readiness · Workflow Coordination  
 **Portfolio:** HR Solutions Lab

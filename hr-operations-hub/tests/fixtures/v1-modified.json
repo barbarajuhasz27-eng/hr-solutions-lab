@@ -1,0 +1,336 @@
+[
+  {
+    "id": "activity-training-rescue",
+    "title": "Leading through change",
+    "playbookId": "training-session",
+    "startsAt": "2026-11-03T08:45:00.000Z",
+    "coordinator": "Sophie Lang",
+    "location": "Room 2.14 · HQ",
+    "actions": [
+      {
+        "id": "trainer-confirmed",
+        "title": "Confirm trainer and session content",
+        "description": "Confirm the trainer, agenda and expected session format.",
+        "dueOffsetMinutes": -10080,
+        "ownerRole": "HR / Trainer",
+        "criticality": "essential",
+        "estimatedMinutes": 3,
+        "dependsOn": [],
+        "fallback": "Use an internal facilitator or agree a new session time.",
+        "status": "done",
+        "ownerName": "Sophie Lang",
+        "statusNote": "Completed in the demo workspace.",
+        "fallbackUsed": false
+      },
+      {
+        "id": "participants-confirmed",
+        "title": "Confirm participant list",
+        "description": "Check the audience and make sure the right people are invited.",
+        "dueOffsetMinutes": -7200,
+        "ownerRole": "HR",
+        "criticality": "essential",
+        "estimatedMinutes": 5,
+        "dependsOn": [],
+        "fallback": "Use the existing registration list and brief the trainer on any gaps.",
+        "status": "done",
+        "ownerName": "Sophie Lang",
+        "statusNote": "Fallback used: Use the existing registration list and brief the trainer on any gaps.",
+        "fallbackUsed": true
+      },
+      {
+        "id": "room-confirmed",
+        "title": "Confirm room or virtual meeting",
+        "description": "Make sure a suitable room or meeting link is available.",
+        "dueOffsetMinutes": -4320,
+        "ownerRole": "Facilities",
+        "criticality": "essential",
+        "estimatedMinutes": 8,
+        "dependsOn": [],
+        "fallback": "Switch to an available alternative room or a virtual format.",
+        "status": "waiting",
+        "ownerName": "Mara Klein",
+        "waitingOn": "Facilities",
+        "statusNote": "Asked for Room 2.14 at 09:10",
+        "fallbackUsed": false
+      },
+      {
+        "id": "it-setup",
+        "title": "Check IT and presentation setup",
+        "description": "Confirm screen, audio, connection and access to the presentation.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "IT",
+        "criticality": "essential",
+        "estimatedMinutes": 12,
+        "dependsOn": [
+          "room-confirmed"
+        ],
+        "fallback": "Use a laptop with a local copy of the materials and a simple screen-share fallback.",
+        "status": "blocked",
+        "ownerName": "Jonas Weber",
+        "statusNote": "Projector cable missing",
+        "fallbackUsed": false
+      },
+      {
+        "id": "participant-reminder",
+        "title": "Send a concise participant reminder",
+        "description": "Share the time, location or link and any short joining instructions.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR",
+        "criticality": "important",
+        "estimatedMinutes": 5,
+        "dependsOn": [
+          "participants-confirmed"
+        ],
+        "fallback": "Send a short plain-text reminder with the essential joining details.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "materials-ready",
+        "title": "Prepare session materials",
+        "description": "Make the presentation and handouts available to the trainer.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR / Trainer",
+        "criticality": "important",
+        "estimatedMinutes": 15,
+        "dependsOn": [
+          "trainer-confirmed"
+        ],
+        "fallback": "Use the trainer's existing standard deck and skip new handouts.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "attendance-followup",
+        "title": "Prepare attendance and feedback follow-up",
+        "description": "Have a simple way to record attendance and collect feedback after the session.",
+        "dueOffsetMinutes": 45,
+        "ownerRole": "HR",
+        "criticality": "optional",
+        "estimatedMinutes": 10,
+        "dependsOn": [],
+        "fallback": "Record attendance after the session and send feedback later.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      }
+    ]
+  },
+  {
+    "id": "activity-training-upcoming",
+    "title": "Excel essentials for managers",
+    "playbookId": "training-session",
+    "startsAt": "2026-11-07T08:00:00.000Z",
+    "coordinator": "Sophie Lang",
+    "location": "Training room · HQ",
+    "actions": [
+      {
+        "id": "trainer-confirmed",
+        "title": "Confirm trainer and session content",
+        "description": "Confirm the trainer, agenda and expected session format.",
+        "dueOffsetMinutes": -10080,
+        "ownerRole": "HR / Trainer",
+        "criticality": "essential",
+        "estimatedMinutes": 3,
+        "dependsOn": [],
+        "fallback": "Use an internal facilitator or agree a new session time.",
+        "status": "done",
+        "ownerName": "Sophie Lang",
+        "statusNote": "Confirmed in the demo workspace."
+      },
+      {
+        "id": "participants-confirmed",
+        "title": "Confirm participant list",
+        "description": "Check the audience and make sure the right people are invited.",
+        "dueOffsetMinutes": -7200,
+        "ownerRole": "HR",
+        "criticality": "essential",
+        "estimatedMinutes": 5,
+        "dependsOn": [],
+        "fallback": "Use the existing registration list and brief the trainer on any gaps.",
+        "status": "done",
+        "ownerName": "Sophie Lang",
+        "statusNote": "Confirmed in the demo workspace."
+      },
+      {
+        "id": "room-confirmed",
+        "title": "Confirm room or virtual meeting",
+        "description": "Make sure a suitable room or meeting link is available.",
+        "dueOffsetMinutes": -4320,
+        "ownerRole": "Facilities",
+        "criticality": "essential",
+        "estimatedMinutes": 8,
+        "dependsOn": [],
+        "fallback": "Switch to an available alternative room or a virtual format.",
+        "status": "done",
+        "ownerName": "Mara Klein",
+        "statusNote": "Confirmed in the demo workspace."
+      },
+      {
+        "id": "it-setup",
+        "title": "Check IT and presentation setup",
+        "description": "Confirm screen, audio, connection and access to the presentation.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "IT",
+        "criticality": "essential",
+        "estimatedMinutes": 12,
+        "dependsOn": [
+          "room-confirmed"
+        ],
+        "fallback": "Use a laptop with a local copy of the materials and a simple screen-share fallback.",
+        "status": "not-started",
+        "ownerName": "Jonas Weber"
+      },
+      {
+        "id": "participant-reminder",
+        "title": "Send a concise participant reminder",
+        "description": "Share the time, location or link and any short joining instructions.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR",
+        "criticality": "important",
+        "estimatedMinutes": 5,
+        "dependsOn": [
+          "participants-confirmed"
+        ],
+        "fallback": "Send a short plain-text reminder with the essential joining details.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "materials-ready",
+        "title": "Prepare session materials",
+        "description": "Make the presentation and handouts available to the trainer.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR / Trainer",
+        "criticality": "important",
+        "estimatedMinutes": 15,
+        "dependsOn": [
+          "trainer-confirmed"
+        ],
+        "fallback": "Use the trainer's existing standard deck and skip new handouts.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "attendance-followup",
+        "title": "Prepare attendance and feedback follow-up",
+        "description": "Have a simple way to record attendance and collect feedback after the session.",
+        "dueOffsetMinutes": 45,
+        "ownerRole": "HR",
+        "criticality": "optional",
+        "estimatedMinutes": 10,
+        "dependsOn": [],
+        "fallback": "Record attendance after the session and send feedback later.",
+        "status": "not-started",
+        "ownerName": "Sophie Lang"
+      }
+    ]
+  },
+  {
+    "id": "activity-training-complete",
+    "title": "HR systems refresher",
+    "playbookId": "training-session",
+    "startsAt": "2026-10-29T08:00:00.000Z",
+    "coordinator": "Sophie Lang",
+    "location": "Virtual · Teams",
+    "actions": [
+      {
+        "id": "trainer-confirmed",
+        "title": "Confirm trainer and session content",
+        "description": "Confirm the trainer, agenda and expected session format.",
+        "dueOffsetMinutes": -10080,
+        "ownerRole": "HR / Trainer",
+        "criticality": "essential",
+        "estimatedMinutes": 3,
+        "dependsOn": [],
+        "fallback": "Use an internal facilitator or agree a new session time.",
+        "status": "done",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "participants-confirmed",
+        "title": "Confirm participant list",
+        "description": "Check the audience and make sure the right people are invited.",
+        "dueOffsetMinutes": -7200,
+        "ownerRole": "HR",
+        "criticality": "essential",
+        "estimatedMinutes": 5,
+        "dependsOn": [],
+        "fallback": "Use the existing registration list and brief the trainer on any gaps.",
+        "status": "done",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "room-confirmed",
+        "title": "Confirm room or virtual meeting",
+        "description": "Make sure a suitable room or meeting link is available.",
+        "dueOffsetMinutes": -4320,
+        "ownerRole": "Facilities",
+        "criticality": "essential",
+        "estimatedMinutes": 8,
+        "dependsOn": [],
+        "fallback": "Switch to an available alternative room or a virtual format.",
+        "status": "done",
+        "ownerName": "Mara Klein"
+      },
+      {
+        "id": "it-setup",
+        "title": "Check IT and presentation setup",
+        "description": "Confirm screen, audio, connection and access to the presentation.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "IT",
+        "criticality": "essential",
+        "estimatedMinutes": 12,
+        "dependsOn": [
+          "room-confirmed"
+        ],
+        "fallback": "Use a laptop with a local copy of the materials and a simple screen-share fallback.",
+        "status": "done",
+        "ownerName": "Jonas Weber"
+      },
+      {
+        "id": "participant-reminder",
+        "title": "Send a concise participant reminder",
+        "description": "Share the time, location or link and any short joining instructions.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR",
+        "criticality": "important",
+        "estimatedMinutes": 5,
+        "dependsOn": [
+          "participants-confirmed"
+        ],
+        "fallback": "Send a short plain-text reminder with the essential joining details.",
+        "status": "done",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "materials-ready",
+        "title": "Prepare session materials",
+        "description": "Make the presentation and handouts available to the trainer.",
+        "dueOffsetMinutes": -1440,
+        "ownerRole": "HR / Trainer",
+        "criticality": "important",
+        "estimatedMinutes": 15,
+        "dependsOn": [
+          "trainer-confirmed"
+        ],
+        "fallback": "Use the trainer's existing standard deck and skip new handouts.",
+        "status": "done",
+        "ownerName": "Sophie Lang"
+      },
+      {
+        "id": "attendance-followup",
+        "title": "Prepare attendance and feedback follow-up",
+        "description": "Have a simple way to record attendance and collect feedback after the session.",
+        "dueOffsetMinutes": 45,
+        "ownerRole": "HR",
+        "criticality": "optional",
+        "estimatedMinutes": 10,
+        "dependsOn": [],
+        "fallback": "Record attendance after the session and send feedback later.",
+        "status": "done",
+        "ownerName": "Sophie Lang"
+      }
+    ],
+    "completedAt": "2026-10-29T09:30:00.000Z"
+  }
+]
