@@ -15,6 +15,7 @@ import { createSeedStore, CURRENT_USER_ID, RESCUE_LEAD_MINUTES } from "@/lib/dom
 import type { StoreV3 } from "@/lib/domain/types";
 import { message } from "@/lib/messages/en";
 import type { Activity, ActionInstance } from "@/lib/model";
+import { advanceSchedule } from "@/lib/schedule/generation";
 import { toActivities } from "@/lib/store/activity-adapter";
 import { browserStorage, clearStore, loadStore, saveStore } from "@/lib/store/persistence";
 
@@ -71,7 +72,8 @@ export function HubStoreProvider({ children }: { children: ReactNode }) {
     const loadedAt = new Date();
     const loaded = loadStore(browserStorage(), loadedAt.toISOString());
     persistBlocked.current = loaded.keepLegacy === true;
-    commit(loaded.store);
+    // Generation and activation run on app load (§6.4), also for a store that was just migrated or shifted.
+    commit(advanceSchedule(loaded.store, loadedAt.toISOString(), CURRENT_USER_ID).store);
     if (loaded.notice) setNotice({ text: loaded.notice, path: window.location.pathname });
     setNow(loadedAt);
     setHydrated(true);
@@ -79,9 +81,15 @@ export function HubStoreProvider({ children }: { children: ReactNode }) {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    const interval = window.setInterval(() => setNow(new Date()), 30_000);
+    const interval = window.setInterval(() => {
+      const tickAt = new Date();
+      // ...and on each clock tick. Idempotent: the same store comes back when nothing is due.
+      const advanced = advanceSchedule(storeRef.current, tickAt.toISOString(), CURRENT_USER_ID).store;
+      if (advanced !== storeRef.current) commit(advanced);
+      setNow(tickAt);
+    }, 30_000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [commit]);
 
   // Saving on every clock tick keeps `savedAt` close to the moment the visitor leaves,
   // so a returning visitor's timeline is only shifted by the time they were actually away.

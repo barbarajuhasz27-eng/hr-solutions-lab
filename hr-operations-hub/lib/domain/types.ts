@@ -5,9 +5,9 @@
  * - An Occurrence is one execution, with its own snapshot of tasks, owner, backup and playbook version.
  * - Tasks belong to occurrences. `dueAt` is resolved and stored on each task.
  *
- * Types that later milestones need (Schedule, Coverage, independence, WorkCalendar) are defined here so
- * those milestones can implement their workflows without redesigning the model. Their workflows are not
- * implemented in M1.
+ * Types that later milestones need (Coverage, independence) are defined here so those milestones can
+ * implement their workflows without redesigning the model. Schedules and the work calendar are evaluated by
+ * the M2 engine (lib/calendar, lib/schedule).
  */
 
 /** Local calendar date in Europe/Vienna, "2026-11-23". */
@@ -130,7 +130,11 @@ export type ScheduleRule =
 export type ScheduleFrequency = "weekly" | "monthly" | "quarterly" | "annually";
 export type WeekendShift = "previous-working-day" | "next-working-day" | "none";
 
-/** One entry in a schedule's change history (§6.6). Evaluated by the M2 schedule engine. */
+/**
+ * One entry in a schedule's change history (§6.6). `versions` lists them by `effectiveFrom`; the
+ * top-level fields of `Schedule` always equal the newest version. An empty list means the top-level
+ * fields have applied since `startDate`.
+ */
 export interface ScheduleVersion {
   effectiveFrom: ISODate;
   frequency: ScheduleFrequency;
@@ -238,6 +242,8 @@ export const HISTORY_EVENT_KINDS = [
   "recovery-decision",
   "calendar-drift-applied",
   "migrated",
+  // M2: a calendar or schedule drift suggestion was reviewed and the current anchor kept (§6.6, §6.7).
+  "drift-kept",
 ] as const;
 export type HistoryEventKind = (typeof HISTORY_EVENT_KINDS)[number];
 
@@ -264,8 +270,14 @@ export interface Occurrence {
   anchorAt: ISODateTime;
   /** Set when moved manually. */
   originalAnchorAt?: ISODateTime;
-  /** The rule now yields a different date (§6.7). */
+  /** The rule now yields a different date after a work-calendar change (§6.7). */
   calendarDrift?: ISODateTime;
+  /**
+   * The new schedule version yields a different date for this started occurrence (§6.6: "Schedule changed:
+   * new rule gives DD.MM.YYYY"). Not in the §4.2 listing; added in M2 so the suggestion can be stored,
+   * applied or kept like `calendarDrift`.
+   */
+  scheduleDrift?: ISODateTime;
   status: OccurrenceStatus;
   playbookId: string;
   playbookVersion: number;

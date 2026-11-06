@@ -144,13 +144,14 @@ describe("occurrence snapshot (§4.3)", () => {
   const operation = { id: "op-a", ownerId: "p-lena", backupId: "p-daniel" };
 
   it("copies tasks with resolved dueAt, owner, backup and playbook version", () => {
-    const occurrence = instantiateOccurrence({ operation, playbook: TRAINING_SESSION_V2, periodKey: "once", anchorAt: "2026-11-20T09:00:00.000Z", location: "HQ", now: NOW, actorId: "p-sophie" });
+    const calendar = store.calendar;
+    const occurrence = instantiateOccurrence({ operation, playbook: TRAINING_SESSION_V2, periodKey: "once", anchorAt: "2026-11-20T09:00:00.000Z", location: "HQ", calendar, now: NOW, actorId: "p-sophie" });
     expect(occurrence).toMatchObject({ id: "op-a:once", ownerId: "p-lena", backupId: "p-daniel", playbookVersion: 2, status: "scheduled" });
-    expect(occurrence.tasks.map((task) => task.dueAt)).toEqual(TRAINING_SESSION_V2.tasks.map((template) => resolveDueAt("2026-11-20T09:00:00.000Z", template)));
+    expect(occurrence.tasks.map((task) => task.dueAt)).toEqual(TRAINING_SESSION_V2.tasks.map((template) => resolveDueAt("2026-11-20T09:00:00.000Z", template, calendar)));
     expect(isNotStarted(occurrence)).toBe(true);
     // The snapshot is a copy: changing the playbook afterwards does not change the occurrence.
     const playbook = structuredClone(TRAINING_SESSION_V2);
-    const copy = instantiateOccurrence({ operation, playbook, periodKey: "once", anchorAt: "2026-11-20T09:00:00.000Z", now: NOW, actorId: "p-sophie" });
+    const copy = instantiateOccurrence({ operation, playbook, periodKey: "once", anchorAt: "2026-11-20T09:00:00.000Z", calendar, now: NOW, actorId: "p-sophie" });
     playbook.tasks[0].title = "Changed";
     playbook.tasks[3].dependsOn.push("trainer-confirmed");
     expect(copy.tasks[0].title).toBe("Confirm trainer and session content");
@@ -158,11 +159,18 @@ describe("occurrence snapshot (§4.3)", () => {
     expect(store).toBeDefined();
   });
 
-  it("resolves hours and minutes exactly and leaves working-day offsets to the M2 engine", () => {
-    expect(resolveDueAt(NOW, { offset: { amount: -90, unit: "minutes" } })).toBe("2026-11-03T06:30:00.000Z");
-    expect(resolveDueAt(NOW, { offset: { amount: 2, unit: "hours" } })).toBe("2026-11-03T10:00:00.000Z");
-    expect(() => resolveDueAt(NOW, { offset: { amount: -1, unit: "workingDays" } })).toThrow(DomainError);
-    expect(() => resolveDueAt(NOW, { offset: { amount: 1, unit: "calendarDays" } })).toThrow(DomainError);
+  // M1 asserted that day-based offsets were rejected until M2. Replaced by the stricter M2 behaviour: every
+  // unit resolves, day units on the work calendar (§6.3; the reference results T11–T17 are in working-days.test).
+  it("resolves every offset unit: hours and minutes exactly, day units on the work calendar", () => {
+    const calendar = store.calendar;
+    expect(resolveDueAt(NOW, { offset: { amount: -90, unit: "minutes" } }, calendar)).toBe("2026-11-03T06:30:00.000Z");
+    expect(resolveDueAt(NOW, { offset: { amount: 2, unit: "hours" } }, calendar)).toBe("2026-11-03T10:00:00.000Z");
+    // Tue 03.11. 09:00 Vienna: −1 WD is Mon 02.11. (01.11. is a holiday), same time.
+    expect(resolveDueAt(NOW, { offset: { amount: -1, unit: "workingDays" } }, calendar)).toBe("2026-11-02T08:00:00.000Z");
+    expect(resolveDueAt(NOW, { offset: { amount: -1, unit: "workingDays" }, dueTime: "16:00" }, calendar)).toBe("2026-11-02T15:00:00.000Z");
+    // −2 calendar days = Sun 01.11., not a working day → previous working day Fri 30.10. (CET from 25.10.).
+    expect(resolveDueAt(NOW, { offset: { amount: -2, unit: "calendarDays" } }, calendar)).toBe("2026-10-30T08:00:00.000Z");
+    expect(() => resolveDueAt(NOW, { offset: { amount: 1, unit: "weeks" as never } }, calendar)).toThrow(DomainError);
   });
 });
 
@@ -238,5 +246,14 @@ describe("temporary activity adapter (M0 screens on v3 data)", () => {
     expect(activity.id).toBe(RESCUE_OCCURRENCE_ID);
     expect(activity.actions[2]).toMatchObject({ status: "waiting", waitingOn: "Facilities", statusNote: "Asked at 09:10", ownerName: "Mara Klein" });
     expect(activity.actions[0]).toMatchObject({ status: "done", statusNote: "Fallback used: x", fallbackUsed: true });
+  });
+});
+
+describe("stores written by M1 stay readable in M2", () => {
+  it("accepts an active occurrence whose history has no activated event (possible before M2)", () => {
+    const store = seed();
+    const upcoming = store.occurrences.find((occurrence) => occurrence.id === UPCOMING_OCCURRENCE_ID)!;
+    const m1Style = { ...store, occurrences: store.occurrences.map((occurrence) => (occurrence === upcoming ? { ...upcoming, history: upcoming.history.filter((event) => event.kind !== "activated") } : occurrence)) };
+    expect(parseStoreV3(JSON.parse(JSON.stringify(m1Style)))).not.toBeNull();
   });
 });

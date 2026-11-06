@@ -3,6 +3,9 @@
  * shape (§4.2, §4.4) and the model invariants. Anything that fails is treated as unreadable.
  */
 import { isClosed, isTaskResolved, occurrenceId } from "./occurrence";
+import { parsePeriodKey } from "../calendar/periods";
+import { calendarProblems } from "../calendar/work-calendar";
+import { scheduleProblems } from "../schedule/rules";
 import {
   AREA_CODES,
   COUNTERPARTY_KINDS,
@@ -13,6 +16,7 @@ import {
   OPERATION_STATUSES,
   TASK_STATUSES,
   type Assignee,
+  type Schedule,
   type StoreV3,
   type Unassigned,
 } from "./types";
@@ -110,19 +114,48 @@ function isPlaybook(value: unknown): boolean {
   );
 }
 
+const RULE_KINDS = ["dayOfMonth", "nthWorkingDay", "workingDaysBeforeMonthEnd", "weekday", "monthAndDay"] as const;
+
+function isScheduleRule(value: unknown): boolean {
+  if (!isRecord(value) || !isOneOf(RULE_KINDS, value.kind)) return false;
+  switch (value.kind) {
+    case "dayOfMonth":
+      return isNumber(value.day);
+    case "nthWorkingDay":
+    case "workingDaysBeforeMonthEnd":
+      return isNumber(value.n);
+    case "weekday":
+      return isNumber(value.weekday);
+    default:
+      return isNumber(value.month) && isNumber(value.day);
+  }
+}
+
+function isScheduleVersion(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    isIsoDate(value.effectiveFrom) &&
+    isOneOf(["weekly", "monthly", "quarterly", "annually"] as const, value.frequency) &&
+    isNumber(value.interval) &&
+    isScheduleRule(value.rule) &&
+    (value.anchorPeriodOffset === 0 || value.anchorPeriodOffset === 1) &&
+    isTime(value.time) &&
+    isOneOf(["previous-working-day", "next-working-day", "none"] as const, value.weekendShift)
+  );
+}
+
 function isSchedule(value: unknown): boolean {
   return (
     isRecord(value) &&
     isOneOf(["weekly", "monthly", "quarterly", "annually"] as const, value.frequency) &&
     isNumber(value.interval) &&
-    isRecord(value.rule) &&
-    isString(value.rule.kind) &&
+    isScheduleRule(value.rule) &&
     (value.anchorPeriodOffset === 0 || value.anchorPeriodOffset === 1) &&
     isTime(value.time) &&
     isOneOf(["previous-working-day", "next-working-day", "none"] as const, value.weekendShift) &&
     isIsoDate(value.startDate) &&
     optional(value.endDate, isIsoDate) &&
-    Array.isArray(value.versions)
+    isArrayOf(value.versions, isScheduleVersion)
   );
 }
 
@@ -210,6 +243,7 @@ function isOccurrence(value: unknown): boolean {
     isInstant(value.anchorAt) &&
     optional(value.originalAnchorAt, isInstant) &&
     optional(value.calendarDrift, isInstant) &&
+    optional(value.scheduleDrift, isInstant) &&
     isOneOf(OCCURRENCE_STATUSES, value.status) &&
     isNonEmpty(value.playbookId) &&
     isNumber(value.playbookVersion) &&
@@ -294,7 +328,10 @@ export function findInvariantViolations(store: StoreV3): string[] {
     }
   }
 
+  for (const problem of calendarProblems(store.calendar)) violations.push(`calendar: ${problem}`);
+
   for (const operation of store.operations) {
+    if (operation.schedule) for (const problem of scheduleProblems(operation.schedule)) violations.push(`operation ${operation.id}: schedule ${problem}`);
     if (!people.has(operation.ownerId)) violations.push(`operation ${operation.id}: owner is not a person`);
     if (operation.backupId !== undefined && !people.has(operation.backupId)) violations.push(`operation ${operation.id}: backup is not a person`);
     if (operation.backupId !== undefined && operation.backupId === operation.ownerId) violations.push(`operation ${operation.id}: backup equals owner`);
@@ -309,6 +346,10 @@ export function findInvariantViolations(store: StoreV3): string[] {
     if (!operation) violations.push(`${where}: unknown operation`);
     if (occurrence.id !== occurrenceId(occurrence.operationId, occurrence.periodKey)) violations.push(`${where}: id is not operationId:periodKey`);
     if (operation && operation.schedule === null && occurrence.periodKey !== "once") violations.push(`${where}: one-off occurrence must use period "once"`);
+    if (operation?.schedule && !parsePeriodKey(occurrence.periodKey, (operation.schedule as Schedule).frequency)) {
+      violations.push(`${where}: period key does not match the ${operation.schedule.frequency} schedule`);
+    }
+    if (isClosed(occurrence) && (occurrence.calendarDrift || occurrence.scheduleDrift)) violations.push(`${where}: closed occurrence with a drift suggestion`);
     if (!people.has(occurrence.ownerId)) violations.push(`${where}: owner is not a person`);
     if (occurrence.backupId !== undefined && occurrence.backupId === occurrence.ownerId) violations.push(`${where}: backup equals owner`);
     if (occurrence.anchorKind === "event-start" && !occurrence.eventDetails) violations.push(`${where}: event occurrence without eventDetails`);

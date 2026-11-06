@@ -90,7 +90,7 @@ export function shiftOccurrence(occurrence: Occurrence, ms: number): Occurrence 
 
 /**
  * §11.4 for a modified stale v3 store: one-off occurrences are shifted by the time away; recurring
- * occurrences keep their real calendar dates (generation for the current date follows in M2).
+ * occurrences keep their real calendar dates, and the schedule engine generates the current periods on load.
  */
 export function shiftStaleStore(store: StoreV3, awayMs: number): { store: StoreV3; recurringKept: boolean } {
   const operations = new Map<string, Operation>(store.operations.map((operation) => [operation.id, operation]));

@@ -41,6 +41,27 @@ export const EN = {
   "history.recovery-decision": "Recovery decision recorded.",
   "history.calendar-drift-applied": "Calendar change applied: anchor moved to {to}.",
   "history.migrated": "Moved into the new workspace from the earlier demo (v{fromVersion}).",
+  "history.drift-kept": "{source} change reviewed: kept the current date; the rule would give {suggested}.",
+  "history.moved.schedule": "Schedule change applied: anchor moved from {from} to {to}.",
+
+  // Schedule and calendar (§6.1, §6.6, §6.7). Rendered by the M6/M7 screens.
+  "schedule.drift": "Schedule changed: new rule gives {date}",
+  "calendar.drift": "Calendar changed: rule now gives {date}",
+  "calendar.unverified-holidays": "Public holidays for {years} were entered manually and have not been checked against the official source. Deadlines that depend on them may be wrong.",
+  "calendar.missing-holidays": "No public holidays configured for {year}; working-day deadlines may be wrong",
+  "calendar.unverified-marker": "unverified calendar",
+  "calendar.day-without-hours": "{weekday} is a working day without working hours: it adds no working time.",
+  "calendar.public-holiday": "Public holiday",
+  "calendar.company-closure": "Company closure",
+  "calendar.projected": "Projected",
+  "drift.source.calendar": "Calendar",
+  "drift.source.schedule": "Schedule",
+  "generation.nth-working-day-out-of-range": "The rule asks for working day {n}, but this month has fewer working days. The occurrence was not generated.",
+  "generation.working-days-before-month-end-out-of-range": "This month has too few working days for the rule. The occurrence was not generated.",
+  "generation.rule-frequency-mismatch": "This rule cannot be used with this frequency.",
+  "generation.no-working-day": "The work calendar has no working day for this period.",
+  "generation.playbook-not-found": "The operation's playbook version is missing.",
+  "generation.backup-required": "The playbook assigns essential tasks to the backup, but the operation has none.",
 
   // Close-out (§6.5).
   "outcome.completed": "Completed",
@@ -92,9 +113,16 @@ export const EN = {
   "error.note-required": "A note is required.",
   "error.note-too-long": "Keep the note to {max} characters or fewer.",
   "error.invalid-instant": "The date and time are not valid.",
-  "error.offset-unit-unsupported": "Working-day and calendar-day offsets need the working-day engine (M2).",
+  "error.offset-unit-unsupported": "This offset unit is not supported.",
   "error.cancel-one-off-only": "Only one-off operations can be cancelled.",
   "error.invalid-status": "This status change is not allowed.",
+  "error.invalid-schedule": "The schedule is not valid.",
+  "error.invalid-calendar": "The work calendar is not valid.",
+  "error.invalid-date": "The date is not valid.",
+  "error.not-recurring": "Only a recurring operation has a schedule.",
+  "error.non-working-day": "The new date is not a working day. Confirm the move to use it anyway.",
+  "error.no-drift": "There is no schedule or calendar change to review for this occurrence.",
+  "error.no-working-day": "The work calendar has no working day near this date.",
 } as const;
 
 export type MessageKey = keyof typeof EN;
@@ -129,6 +157,7 @@ const str = (value: string | number | boolean | undefined) => (value === undefin
 export function historyMessageKey(event: Pick<HistoryEvent, "kind" | "taskId" | "detail">): MessageKey {
   if (event.kind === "hold-set") return event.detail.holdKind === "blocked" ? "history.hold-set.blocked" : "history.hold-set.waiting";
   if (event.kind === "skipped" && event.taskId) return "history.task-skipped";
+  if (event.kind === "moved" && event.detail.reason === "schedule-changed") return "history.moved.schedule";
   return `history.${event.kind}` satisfies `history.${HistoryEventKind}`;
 }
 
@@ -155,7 +184,13 @@ export function describeHistoryEvent(event: HistoryEvent, context: HistoryContex
     case "history.coverage-removed":
       return message(key, { absent: context.assigneeName(`person:${str(d.absentPersonId)}`) });
     case "history.moved":
+    case "history.moved.schedule":
       return message(key, { from: context.formatInstant(str(d.from)), to: context.formatInstant(str(d.to)) });
+    case "history.drift-kept":
+      return message(key, {
+        source: EN[d.source === "schedule" ? "drift.source.schedule" : "drift.source.calendar"],
+        suggested: context.formatInstant(str(d.suggested)),
+      });
     case "history.calendar-drift-applied":
       return message(key, { to: context.formatInstant(str(d.to)) });
     case "history.closed":

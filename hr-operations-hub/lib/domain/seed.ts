@@ -2,22 +2,22 @@
  * Synthetic v3 seed, built relative to the current date (Appendix B). All people and counterparties are
  * fictional. No real employee data.
  *
- * M1 scope: people, counterparties, the work calendar and the three one-off Training Session operations
- * (the existing demo scenarios). The payroll and HR reporting operations need the approved playbooks and
- * the schedule engine; they are seeded in M5. Unavailability for the cover flow is seeded with M4.
+ * Scope so far: people, counterparties, the work calendar and the three one-off Training Session operations
+ * (the existing demo scenarios). The recurring payroll and HR reporting operations need the approved
+ * playbooks; they are seeded in M5. Unavailability for the cover flow is seeded with M4.
  */
 import { COUNTERPARTY_IDS, shippedPlaybooks, TRAINING_PLAYBOOK_ID } from "./playbooks";
 import {
+  activateIfDue,
   addMinutes,
   historyEvent,
   instantiateOccurrence,
-  leadTimeStart,
   ONE_OFF_PERIOD_KEY,
-  openStatusAt,
   occurrenceId,
   toInstant,
 } from "./occurrence";
-import type { Counterparty, ISODateTime, Occurrence, Operation, Person, Playbook, PublicHoliday, StoreV3, Task, WorkCalendar } from "./types";
+import { defaultWorkCalendar } from "../calendar/work-calendar";
+import type { Counterparty, ISODateTime, Occurrence, Operation, Person, Playbook, StoreV3, Task, WorkCalendar } from "./types";
 
 /** The simulated current user (§3). */
 export const CURRENT_USER_ID = "p-sophie";
@@ -41,36 +41,12 @@ export const COUNTERPARTIES: Counterparty[] = [
   { id: COUNTERPARTY_IDS.trainer, name: "External trainer", kind: "external-provider", contactName: "Alex Morgan" },
 ];
 
-const ARG = "ARG § 7 Abs. 2";
-
-/** Austrian statutory public holidays 2026–2027 (§6.1), entered by hand and not yet verified against RIS. */
-const HOLIDAYS: [string, string][] = [
-  ["2026-01-01", "Neujahr"], ["2026-01-06", "Heilige Drei Könige"], ["2026-04-06", "Ostermontag"],
-  ["2026-05-01", "Staatsfeiertag"], ["2026-05-14", "Christi Himmelfahrt"], ["2026-05-25", "Pfingstmontag"],
-  ["2026-06-04", "Fronleichnam"], ["2026-08-15", "Mariä Himmelfahrt"], ["2026-10-26", "Nationalfeiertag"],
-  ["2026-11-01", "Allerheiligen"], ["2026-12-08", "Mariä Empfängnis"], ["2026-12-25", "Christtag"],
-  ["2026-12-26", "Stefanitag"],
-  ["2027-01-01", "Neujahr"], ["2027-01-06", "Heilige Drei Könige"], ["2027-03-29", "Ostermontag"],
-  ["2027-05-01", "Staatsfeiertag"], ["2027-05-06", "Christi Himmelfahrt"], ["2027-05-17", "Pfingstmontag"],
-  ["2027-05-27", "Fronleichnam"], ["2027-08-15", "Mariä Himmelfahrt"], ["2027-10-26", "Nationalfeiertag"],
-  ["2027-11-01", "Allerheiligen"], ["2027-12-08", "Mariä Empfängnis"], ["2027-12-25", "Christtag"],
-  ["2027-12-26", "Stefanitag"],
-];
-
+/**
+ * The demo work calendar (Appendix B): Mon–Fri, 08:00–12:00 and 13:00–17:00, the Austrian statutory
+ * holidays 2026–2027 (unverified) and the removable demo closures 24.12. and 31.12.2026.
+ */
 export function seedCalendar(now: ISODateTime): WorkCalendar {
-  const day = [{ start: "08:00", end: "12:00" }, { start: "13:00", end: "17:00" }];
-  return {
-    timeZone: "Europe/Vienna",
-    workingWeek: [1, 2, 3, 4, 5],
-    workingHours: { 1: day, 2: day, 3: day, 4: day, 5: day },
-    publicHolidays: HOLIDAYS.map(([date, name]): PublicHoliday => ({ date, name, source: ARG, verified: false })),
-    // Removable company-specific closures (D12), never statutory public holidays (D8).
-    companyClosures: [
-      { date: "2026-12-24", name: "Demo company closure" },
-      { date: "2026-12-31", name: "Demo company closure" },
-    ],
-    updatedAt: now,
-  };
+  return defaultWorkCalendar(now);
 }
 
 /** The lead demo scenario: a training session that starts this many minutes after seeding. */
@@ -102,14 +78,8 @@ function trainingOperation(id: string, title: string, createdAt: ISODateTime): O
 }
 
 /** An occurrence generated in the past whose lead time has started by `now` is active, with an `activated` event. */
-function activateIfStarted(occurrence: Occurrence, playbook: Playbook, now: ISODateTime): Occurrence {
-  if (occurrence.status !== "scheduled" || openStatusAt(occurrence.anchorAt, playbook, occurrence.tasks, now) !== "active") return occurrence;
-  const activatedAt = leadTimeStart(occurrence.anchorAt, playbook, occurrence.tasks);
-  return {
-    ...occurrence,
-    status: "active",
-    history: [...occurrence.history, historyEvent(occurrence, "activated", activatedAt, CURRENT_USER_ID)],
-  };
+function activateIfStarted(occurrence: Occurrence, playbook: Playbook, calendar: WorkCalendar, now: ISODateTime): Occurrence {
+  return activateIfDue(occurrence, playbook, calendar, now, CURRENT_USER_ID);
 }
 
 /** Marks tasks done at the given times, each with a `task-completed` history event. */
@@ -136,22 +106,23 @@ export function createSeedStore(nowInput: Date | ISODateTime): StoreV3 {
   const playbooks = shippedPlaybooks();
   const training = playbooks.find((playbook) => playbook.id === TRAINING_PLAYBOOK_ID)!;
   const at = (offsetMinutes: number) => new Date(nowMs + offsetMinutes * MINUTE).toISOString();
+  const calendar = seedCalendar(now);
 
   // 1. "Leading through change": starts 45 minutes after seeding, nothing prepared (the rescue scenario).
   const rescueAnchor = at(RESCUE_LEAD_MINUTES);
   const rescueOp = trainingOperation(RESCUE_OPERATION_ID, "Leading through change", at(-10 * DAY_MINUTES));
   const rescue = activateIfStarted(instantiateOccurrence({
     operation: rescueOp, playbook: training, periodKey: ONE_OFF_PERIOD_KEY,
-    anchorAt: rescueAnchor, location: "Room 2.14 · HQ", now: rescueOp.createdAt, actorId: CURRENT_USER_ID,
-  }), training, now);
+    anchorAt: rescueAnchor, location: "Room 2.14 · HQ", calendar, now: rescueOp.createdAt, actorId: CURRENT_USER_ID,
+  }), training, calendar, now);
 
   // 2. "Excel essentials for managers": in 4 days, trainer, participants and room confirmed.
   const upcomingAnchor = at(4 * DAY_MINUTES);
   const upcomingOp = trainingOperation(UPCOMING_OPERATION_ID, "Excel essentials for managers", at(-8 * DAY_MINUTES));
   const upcomingBase = activateIfStarted(instantiateOccurrence({
     operation: upcomingOp, playbook: training, periodKey: ONE_OFF_PERIOD_KEY,
-    anchorAt: upcomingAnchor, location: "Training room · HQ", now: upcomingOp.createdAt, actorId: CURRENT_USER_ID,
-  }), training, now);
+    anchorAt: upcomingAnchor, location: "Training room · HQ", calendar, now: upcomingOp.createdAt, actorId: CURRENT_USER_ID,
+  }), training, calendar, now);
   const doneOnTime = (taskId: string) => {
     const due = new Date(upcomingBase.tasks.find((task) => task.id === taskId)!.dueAt).getTime();
     return new Date(Math.min(due, nowMs) - 2 * 60 * MINUTE).toISOString();
@@ -168,8 +139,8 @@ export function createSeedStore(nowInput: Date | ISODateTime): StoreV3 {
   const completedOp = trainingOperation(COMPLETED_OPERATION_ID, "HR systems refresher", at(-14 * DAY_MINUTES));
   const completedBase = activateIfStarted(instantiateOccurrence({
     operation: completedOp, playbook: training, periodKey: ONE_OFF_PERIOD_KEY,
-    anchorAt: completedAnchor, location: "Virtual · Teams", now: completedOp.createdAt, actorId: CURRENT_USER_ID,
-  }), training, now);
+    anchorAt: completedAnchor, location: "Virtual · Teams", calendar, now: completedOp.createdAt, actorId: CURRENT_USER_ID,
+  }), training, calendar, now);
   const completedTasks = completeTasks(
     completedBase,
     completedBase.tasks.map((task) => ({ taskId: task.id, at: addMinutes(task.dueAt, -30), note: "Completed in the demo workspace." })),
@@ -186,7 +157,7 @@ export function createSeedStore(nowInput: Date | ISODateTime): StoreV3 {
     version: 3,
     savedAt: now,
     modified: false,
-    calendar: seedCalendar(now),
+    calendar,
     people: structuredClone(PEOPLE),
     counterparties: structuredClone(COUNTERPARTIES),
     playbooks,
